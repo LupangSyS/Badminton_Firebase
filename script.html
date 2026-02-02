@@ -23,6 +23,7 @@ function saveData() {
         bookingCounter,
         gameRule: document.getElementById('game-rule').value,
         rankedMode: isRankedMode // ✨ บันทึกค่านี้
+        completedGameTimes // ✨ NEW: บันทึกไปด้วย
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
@@ -74,7 +75,7 @@ function loadData() {
             const ruleSelect = document.getElementById('game-rule');
             if(ruleSelect) ruleSelect.value = data.gameRule;
         }
-
+        if (data.completedGameTimes) completedGameTimes = data.completedGameTimes; // ✨ NEW
 
         return true;
     } catch (e) {
@@ -222,6 +223,10 @@ const addPlayerToCourt = (court, player) => {
     if (emptyIdx !== -1) {
         // ถ้าเจอหลุม ให้เสียบลงหลุม
         court.players[emptyIdx] = player;
+        const activeCount = court.players.filter(p => p !== null).length;
+        if (activeCount === 4) {
+            court.gameStartTime = Date.now(); 
+        }
     } else {
         // ถ้าไม่เจอหลุม (และยังไม่เต็ม 4) ให้ต่อท้ายปกติ
         if (court.players.length < 4) {
@@ -243,6 +248,8 @@ let pairingHistory = {};
 let opponentHistory = {}; // ✨ NEW: ตัวแปรจำหน้าศัตรู
 let matchLogs = [];
 let isRankedMode = false; // ✨ NEW: ตัวแปรเก็บสถานะ Ranked Mode
+let completedGameTimes = []; // ✨ NEW: เก็บประวัติเวลาที่ใช้เล่นจริง (หน่วยนาที)
+const DEFAULT_GAME_TIME = 15; // ค่าเริ่มต้น (ถ้ายังไม่มีใครเล่นจบเลย ให้ใช้เลขนี้ไปก่อน)
 
 // --- Configuration (Frozen Logic V4.0) ---
 const AVG_GAME_DURATION = 15;
@@ -1111,7 +1118,18 @@ function resolveGame(winningTeamIdx) {
             court: activeGameResolveCourtId+1,
             winners: winners.map(p=>p.name).join(', '),
             losers: losers.map(p=>p.name).join(', '),
-            duration: formatTime(court.timer)
+            duration: formatTime(court.timer),
+            if (court.gameStartTime) {
+        const durationMs = Date.now() - court.gameStartTime;
+        const durationMins = Math.round(durationMs / 60000); 
+
+        // กรอง Error: ต้องเล่นเกิน 2 นาทีถึงจะนับ
+        if (durationMins >= 2) {
+            completedGameTimes.push(durationMins);
+            if (completedGameTimes.length > 5) completedGameTimes.shift(); // เก็บแค่ 5 เกมล่าสุด
+        }
+        court.gameStartTime = null; 
+    }
         });
         renderMatchLog();
        
@@ -1872,7 +1890,53 @@ function copyShareLink() {
     alert("ก๊อปปี้แล้ว! เอาไปแปะในไลน์โลด");
 }
 // 🔥 ฟังก์ชันใหม่: หาคู่แข่งที่ "หน้าช้ำน้อยที่สุด" (Conflict Score ต่ำสุด)
+// 3.1 ฟังก์ชันหาค่าเฉลี่ย (ต้องมี)
+function getAverageGameTime() {
+    if (completedGameTimes.length === 0) return DEFAULT_GAME_TIME;
+    const sum = completedGameTimes.reduce((a, b) => a + b, 0);
+    return Math.round(sum / completedGameTimes.length);
+}
 
+// 3.2 ฟังก์ชันคำนวณเวลารอแบบ Real-time (ตัวใหม่ล่าสุด!)
+function getWaitTimeForQueue(queueIndex) {
+    const avgTime = getAverageGameTime(); 
+    const now = Date.now();
+    
+    // เช็คว่าเล่นโหมด Winner Stay (รับ 2) หรือปกติ (รับ 4)
+    // *แก้ id ให้ตรงกับ <select> ของมึงนะ*
+    const gameRuleSelect = document.getElementById('game-rule'); 
+    const isWinnerStay = gameRuleSelect && (gameRuleSelect.value.includes('2') || gameRuleSelect.value.includes('stay'));
+    const spotsPerCourt = isWinnerStay ? 2 : 4;
+
+    // สร้าง Slots ว่าง
+    let availableSlots = [];
+    courts.forEach(c => {
+        let freeAt = now;
+        if (c.gameStartTime) {
+            let expected = c.gameStartTime + (avgTime * 60000);
+            if (expected < now) expected = now + 30000; // ถ้าเกินเวลาแล้ว ให้รออีก 30วิ
+            freeAt = expected;
+        }
+        for (let k = 0; k < spotsPerCourt; k++) {
+            availableSlots.push(freeAt);
+        }
+    });
+
+    availableSlots.sort((a, b) => a - b);
+
+    // คำนวณเวลา
+    if (queueIndex < availableSlots.length) {
+        const mySlotTime = availableSlots[queueIndex];
+        return Math.max(0, Math.round((mySlotTime - now) / 60000));
+    } else {
+        const totalCapacity = availableSlots.length;
+        const cycles = Math.floor(queueIndex / totalCapacity);
+        const remainder = queueIndex % totalCapacity;
+        const baseSlotTime = availableSlots[remainder]; 
+        const waitMs = (baseSlotTime - now) + (cycles * avgTime * 60000);
+        return Math.max(0, Math.round(waitMs / 60000));
+    }
+}
 </script>
 
 

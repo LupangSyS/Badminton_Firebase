@@ -22,7 +22,7 @@ function saveData() {
         matchLogs,
         bookingCounter,
         gameRule: document.getElementById('game-rule').value,
-        rankedMode: isRankedMode // ✨ บันทึกค่านี้
+        rankedMode: isRankedMode, // ✨ บันทึกค่านี้
         completedGameTimes // ✨ NEW: บันทึกไปด้วย
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -1112,6 +1112,19 @@ function resolveGame(winningTeamIdx) {
         let winners = (winningTeamIdx === 0) ? t1 : t2;
         let losers = (winningTeamIdx === 0) ? t2 : t1;
        
+       // ✨ 1. คำนวณเวลาและเก็บสถิติ "ก่อน"
+        if (court.gameStartTime) {
+            const durationMs = Date.now() - court.gameStartTime;
+            const durationMins = Math.round(durationMs / 60000); 
+
+            // กรอง Error: ต้องเล่นเกิน 2 นาทีถึงจะนับ
+            if (durationMins >= 2) {
+                completedGameTimes.push(durationMins);
+                if (completedGameTimes.length > 5) completedGameTimes.shift(); 
+            }
+            // court.gameStartTime = null; // ❌ อย่าเพิ่งรีเซ็ตตรงนี้ เดี๋ยวข้างล่างไม่มีใช้
+        }
+
         // บันทึก Log
         matchLogs.unshift({
             time: new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
@@ -1119,15 +1132,7 @@ function resolveGame(winningTeamIdx) {
             winners: winners.map(p=>p.name).join(', '),
             losers: losers.map(p=>p.name).join(', '),
             duration: formatTime(court.timer),
-            if (court.gameStartTime) {
-        const durationMs = Date.now() - court.gameStartTime;
-        const durationMins = Math.round(durationMs / 60000); 
 
-        // กรอง Error: ต้องเล่นเกิน 2 นาทีถึงจะนับ
-        if (durationMins >= 2) {
-            completedGameTimes.push(durationMins);
-            if (completedGameTimes.length > 5) completedGameTimes.shift(); // เก็บแค่ 5 เกมล่าสุด
-        }
         court.gameStartTime = null; 
     }
         });
@@ -1502,7 +1507,8 @@ function updateQueueDisplay() {
     const rule = document.getElementById('game-rule').value;
     const playersOutPerGame = (rule === 'winner_stay') ? 2 : 4;
     const avgGameTime = 15;
-   
+    const waitMins = getWaitTimeForQueue(index);
+
     let availableSlots = [];
     courts.forEach(c => {
         let remainingMins = 0;
@@ -1517,16 +1523,27 @@ function updateQueueDisplay() {
 
 
     list.innerHTML = waiting.map((p, index) => {
-        const batchIndex = index % totalCapacity;
-        const rounds = Math.floor(index / totalCapacity);
-        const baseWait = availableSlots[batchIndex] !== undefined ? availableSlots[batchIndex] : 0;
-        const estimatedWaitMins = baseWait + (rounds * avgGameTime);
+        // ✨ NEW: เรียกใช้ฟังก์ชันคำนวณเทพ! (ลบ Logic เดิมทิ้งให้หมด)
+        const estimatedWaitMins = getWaitTimeForQueue(index);
        
-        let badgeClass = 'wait-green'; let badgeText = `< ${estimatedWaitMins}m`;
-        if (estimatedWaitMins > 20) { badgeClass = 'wait-red'; badgeText = `~${estimatedWaitMins}m`; }
-        else if (estimatedWaitMins > 10) { badgeClass = 'wait-orange'; badgeText = `~${estimatedWaitMins}m`; }
-        else if (estimatedWaitMins > 0) { badgeText = `~${estimatedWaitMins}m`; }
-        else { badgeText = 'Now!'; badgeClass = 'wait-green'; }
+        // จัดการสีป้าย (Badge Logic)
+        let badgeClass = 'wait-green'; 
+        let badgeText = `< ${estimatedWaitMins}m`; // Default
+        
+        if (estimatedWaitMins > 20) { 
+            badgeClass = 'wait-red'; 
+            badgeText = `~${estimatedWaitMins}m`; 
+        } else if (estimatedWaitMins > 10) { 
+            badgeClass = 'wait-orange'; 
+            badgeText = `~${estimatedWaitMins}m`; 
+        } else if (estimatedWaitMins > 5) {
+            badgeText = `~${estimatedWaitMins}m`;
+        } else if (estimatedWaitMins > 0) { 
+             badgeText = `< ${estimatedWaitMins}m`; // น้อยกว่า 5 นาที
+        } else { 
+            badgeText = 'เร็วๆ นี้'; 
+            badgeClass = 'wait-green'; 
+        }
        
         const itemClass = p.isResting ? 'player-item resting' : `player-item ${p.bookingId ? 'booked' : ''} ${p.isFastPass ? 'fastpass' : ''}`;
         const opacityStyle = p.isResting ? 'opacity: 0.6; background: #ddd;' : '';

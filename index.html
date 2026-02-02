@@ -45,7 +45,10 @@
                             <option value="winner_stay">อยู่ครบ 2 เกมค่อยออก (Fixed Quota)</option>
                         </select>
                     </div>
-
+<div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.5); padding: 5px; border-radius: 6px;">
+    <input type="checkbox" id="ranked-mode-toggle" onchange="toggleRankedMode()" style="width: 18px; height: 18px;">
+    <label for="ranked-mode-toggle" style="cursor: pointer; font-weight: bold; color: #c0392b;">🏆 Ranked Mode (จัดสายแข็ง)</label>
+</div>
                     <div class="control-panel">
                         <textarea id="new-players" placeholder="วางชื่อ... (1.แปง, 2.เวฟ)"></textarea>
                         <div style="display:flex; gap:8px; margin-top:8px;">

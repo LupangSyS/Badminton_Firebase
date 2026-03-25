@@ -937,19 +937,7 @@ function resolveGame(winningTeamIdx) {
         };
         matchLogs.unshift(newLog);
 
-        // 👇 ส่งข้อมูลไปบันทึกลง Sheet (แท็บ DB_MatchLogs)
-        if (typeof google !== 'undefined' && google.script) {
-            const sheetLog = {
-                logId: Date.now(),
-                date: new Date().toLocaleString('th-TH'),
-                courtName: court.customName || `คอร์ท ${activeGameResolveCourtId + 1}`,
-                winners: newLog.winners,
-                losers: newLog.losers,
-                duration: newLog.duration,
-                rule: court.rule || 'normal'
-            };
-            google.script.run.appendMatchLogToDB(JSON.stringify(sheetLog));
-        }
+    
         
         court.gameStartTime = null; 
         renderMatchLog();
@@ -1089,17 +1077,7 @@ function updateCost() {
 }
 
 function endSession() {
-    // 👇 ส่งข้อมูลบิลรวมไปเก็บลง Sheet (แท็บ DB_Session) ก่อนโหลดรูป
-    if (typeof google !== 'undefined' && google.script) {
-        const sessionData = {
-            date: new Date().toLocaleDateString('th-TH'),
-            totalPlayers: players.length,
-            totalMatches: matchLogs.length,
-            shuttlesUsed: parseFloat(document.getElementById('calc-shuttle-used').value) || 0,
-            totalCost: parseFloat(document.getElementById('total-cost-display').innerText.replace(/,/g, '')) || 0
-        };
-        google.script.run.appendSessionToDB(JSON.stringify(sessionData));
-    }
+  
 
     // แคปรูปตามเดิม
     const element = document.getElementById("summary-capture-area");
@@ -1299,33 +1277,8 @@ function getWaitTimeForQueue(queueIndex) {
     }
 }
 
-// 📡 LIVE SYNC
-const isViewer = (typeof APP_MODE !== 'undefined' && APP_MODE === 'viewer');
-let syncInterval = null;
 
-if (isViewer) {
-    console.log("👀 VIEW MODE ACTIVATED");
-    document.body.classList.add('view-mode');
-    google.script.run.withSuccessHandler(restoreState).syncLoadState();
-    setInterval(() => { google.script.run.withSuccessHandler(restoreState).syncLoadState(); }, 15000);
-}
 
-function toggleBroadcast() {
-    const btn = document.getElementById('btn-broadcast');
-    if (syncInterval) {
-        clearInterval(syncInterval); syncInterval = null; btn.innerHTML = '📡 เริ่ม Live'; btn.classList.remove('pulse'); alert('📴 จบการ Live แล้ว');
-    } else {
-        if(!confirm('เริ่ม "ถ่ายทอดสด" ไหม?')) return;
-        syncInterval = setInterval(pushDataToCloud, 10000); pushDataToCloud();
-        btn.innerHTML = '🔴 On Air'; btn.classList.add('pulse'); showShareLinkModal();
-    }
-}
-
-function pushDataToCloud() {
-    const state = { players: players, courts: courts, courtCount: courtCount, gameRule: 'normal', timestamp: Date.now() };
-    google.script.run.syncSaveState(JSON.stringify(state));
-    console.log("Cloud Synced ☁️");
-}
 
 function restoreState(json) {
     if (isModalOpen() || !json) return;

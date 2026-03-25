@@ -1,2 +1,0 @@
-# jethjade-badminton
-As request

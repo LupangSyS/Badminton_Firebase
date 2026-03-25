@@ -1,5 +1,8 @@
+// ==========================================
+// 🏸 BADMINTON MANAGER PRO - SCRIPT
+// ==========================================
 
-// 👇 เชื่อมต่อ Firebase Database ของมึง (ไม่ต้องไปยุ่งกับ GAS แล้ว)
+// 👇 วาง Config ทิ้งไว้บนสุดเลย
 const firebaseConfig = {
   apiKey: "AIzaSyCnrkEbVOM3i7f59rAnWN9mgPC9iekEuIA",
   authDomain: "badminton-manager-e77bb.firebaseapp.com",
@@ -10,35 +13,18 @@ const firebaseConfig = {
   measurementId: "G-2EFE485QTK"
 };
 
-// เริ่มเดินเครื่อง Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 console.log("🔥 Firebase พร้อมใช้งานแล้วเว้ยแปง!");
 
-// ==========================================
-// 🏸 โค้ดระบบแบดของมึง เริ่มต่อจากตรงนี้ไป...
-// ==========================================
-
-// ... (โค้ดเก่าของมึง พวก let players = []; อะไรพวกนั้น ปล่อยไว้ที่เดิมเป๊ะๆ) ...
-
-// ==========================================
-// 🏸 BADMINTON MANAGER PRO - SCRIPT (V.Final Stable)
-// ==========================================
-
 // --- Persistence & State Management ---
 const STORAGE_KEY = 'BADMINTON_MANAGER_V7_DATA';
 
-function isModalOpen() {
-    const booking = document.getElementById('booking-modal');
-    const winner = document.getElementById('winner-modal');
-    return (booking && booking.style.display === 'flex') || (winner && winner.style.display === 'flex');
-}
-
+// 👇 เอาฟังก์ชัน saveData ใหม่ไปทับของเดิมด้วย!
 function saveData() {
     const ruleEl = document.getElementById('game-rule');
     const ruleValue = ruleEl ? ruleEl.value : 'normal';
 
-    // 1. แพ็คกระเป๋าเตรียมข้อมูล
     const data = {
         players: players,
         courts: courts.map(c => ({...c, interval: null})),
@@ -51,22 +37,16 @@ function saveData() {
         rankedMode: isRankedMode,
         mmrMode: isMMRMode,
         completedGameTimes: completedGameTimes,
-        lastUpdated: new Date().toISOString() // แปะป้ายเวลาซะหน่อย
+        lastUpdated: new Date().toISOString()
     };
 
-    // 2. เซฟลง LocalStorage เผื่อเน็ตหลุด (กันเหนียว)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
-    // 3. 🚀 ยิงขึ้น Firebase Cloud (พระเอกของเราอยู่ตรงนี้)
+    // 🚀 ยิงขึ้น Firebase เลยตรงๆ
     if (typeof db !== 'undefined') {
-        // สร้าง Collection ชื่อ 'rooms' และ Document ชื่อ 'main-court' (เผื่ออนาคตมึงทำหลายห้อง)
         db.collection('rooms').doc('main-court').set(data)
-          .then(() => {
-              console.log("☁️ Data Synced to Firebase สำเร็จเว้ย!");
-          })
-          .catch((error) => {
-              console.error("❌ Error writing to Firebase: ", error);
-          });
+          .then(() => console.log("☁️ Data Synced to Firebase สำเร็จเว้ย!"))
+          .catch((error) => console.error("❌ Error writing to Firebase: ", error));
     }
 }
 

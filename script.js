@@ -36,27 +36,57 @@ function generateRoomCode() {
 }
 
 // 👑 ฟังก์ชันสร้างห้อง (Host) - อัปเกรดแล้ว!
+// 👑 ฟังก์ชันสร้างห้อง (Host) - เพิ่มระบบจำรหัส
 function createRoom() {
     currentRoomId = generateRoomCode();
     isHost = true;
     
-    // 1. สลับหน้าจอซ่อน Lobby
+    // 🔥 ฝังชิปความจำลง sessionStorage!
+    sessionStorage.setItem('ROOM_ID', currentRoomId);
+    sessionStorage.setItem('IS_HOST', 'true');
+    
     document.getElementById('landing-page').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
     
-    // 2. เอาเลขห้องไปแปะโชว์บนหน้าเว็บ! (มึงจะได้ไม่บ่นว่าไม่เห็นเลขห้อง)
     document.getElementById('display-room-id').innerText = currentRoomId;
     document.getElementById('display-role').innerText = "👑 HOST (คนคุม)";
     document.getElementById('display-role').style.background = "#e74c3c";
     
-    // 3. บังคับให้ระบบเตรียมข้อมูลและวาดคอร์ทใหม่ทันที (แก้บั๊กคอร์ทหาย)
     if (players.length === 0) players = []; 
     renderCourts();
     renderQueue();
     updateDashboard();
     
-    // 4. เซฟขึ้น Firebase จองห้องไว้เลย
     saveData(); 
+}
+
+// 📱 ฟังก์ชันเข้าร่วมห้อง (Viewer) - เพิ่มระบบจำรหัส
+// 📱 ฟังก์ชันเข้าร่วมห้อง (Viewer) - เพิ่มระบบจำรหัส
+function joinRoom() {
+    const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
+    if (codeInput.length < 8) {
+        alert("ใส่รหัสห้องให้ครบดิวะตาแหกดูด้วย!");
+        return;
+    }
+    
+    currentRoomId = codeInput;
+    isHost = false;
+    
+    // 🔥 ฝังชิปความจำลง sessionStorage!
+    sessionStorage.setItem('ROOM_ID', currentRoomId);
+    sessionStorage.setItem('IS_HOST', 'false');
+    
+    document.body.classList.add('view-mode');
+    document.getElementById('landing-page').style.display = 'none';
+    document.getElementById('app-container').style.display = 'block';
+    
+    document.getElementById('display-room-id').innerText = currentRoomId;
+    document.getElementById('display-role').innerText = "📱 VIEWER (ดูอย่างเดียว)";
+    document.getElementById('display-role').style.background = "#7f8c8d";
+
+    renderCourts();
+    renderQueue();
+    updateDashboard();
 }
 
 // 📱 ฟังก์ชันเข้าร่วมห้อง (Viewer) - อัปเกรดแล้ว!
@@ -1380,4 +1410,39 @@ function copyShareLink() {
     copyText.select(); document.execCommand("copy"); alert("ก๊อปปี้แล้ว!");
 }
 
+// 🔄 ระบบกู้ชีพ (Auto-Login) เมื่อเผลอกด Refresh หน้าเว็บ
+window.onload = function() {
+    const savedRoomId = sessionStorage.getItem('ROOM_ID');
+    const savedIsHost = sessionStorage.getItem('IS_HOST');
+
+    // ถ้ามีรหัสห้องจำไว้ แปลว่าเพิ่ง Refresh มา ให้ข้าม Lobby ไปเลย!
+    if (savedRoomId) {
+        currentRoomId = savedRoomId;
+        isHost = (savedIsHost === 'true'); // แปลงค่ากลับเป็น boolean
+
+        // ซ่อน Lobby ทิ้ง
+        document.getElementById('landing-page').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+
+        // แปะป้ายรหัสห้อง
+        document.getElementById('display-room-id').innerText = currentRoomId;
+        
+        // เช็คว่าเป็น Host หรือ Viewer เพื่อจัดการปุ่ม
+        if (isHost) {
+            document.getElementById('display-role').innerText = "👑 HOST (คนคุม)";
+            document.getElementById('display-role').style.background = "#e74c3c";
+        } else {
+            document.body.classList.add('view-mode');
+            document.getElementById('display-role').innerText = "📱 VIEWER (ดูอย่างเดียว)";
+            document.getElementById('display-role').style.background = "#7f8c8d";
+        }
+
+        // วาดหน้าจอให้พร้อมใช้งาน
+        renderCourts();
+        renderQueue();
+        updateDashboard();
+        
+        console.log("🔄 กู้ชีพสำเร็จ! กลับเข้าห้อง:", currentRoomId, "สถานะ Host:", isHost);
+    }
+};
 init();

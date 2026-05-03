@@ -10,13 +10,34 @@
 </head>
 <body>
   <!-- 1. หน้า Lobby ต้องอยู่บนสุด และไม่มี display:none -->
+    <!-- 🚪 1. หน้า Lobby (อันนี้โชว์ตอนแรก) -->
     <div id="landing-page" style="text-align: center; margin-top: 100px;">
-         ...ปุ่มสร้างห้อง...
+        <h1 style="font-size: 2.5rem; color: #2c3e50;">🏸 Badminton Manager PRO</h1>
+        <p>ระบบจัดการคิวแบดมินตัน Realtime</p>
+        
+        <div style="margin: 40px;">
+            <!-- มึงดูตรงนี้! ต้องเป็นปุ่มแบบนี้ ไม่ใช่พิมพ์แค่ตัวหนังสือ ...ปุ่มสร้างห้อง... -->
+            <button onclick="createRoom()" class="primary" style="font-size: 1.2rem; padding: 15px 30px; border-radius: 8px;">
+                👑 สร้างห้องใหม่ (Host)
+            </button>
+        </div>
+        
+        <hr style="width: 50%; margin: 30px auto; border: 1px solid #ddd;">
+        
+        <div style="margin: 40px;">
+            <input type="text" id="room-code-input" placeholder="เช่น 0405-A1B2" maxlength="9" 
+                   style="font-size: 1.5rem; text-align: center; text-transform: uppercase; width: 250px; padding: 10px; border-radius: 8px;">
+            <br><br>
+            <button onclick="joinRoom()" class="secondary" style="font-size: 1.2rem; padding: 10px 30px; border-radius: 8px;">
+                📱 เข้าร่วมห้อง (ดูคิว)
+            </button>
+        </div>
     </div>
 
+    <div id="app-container" style="display: none;"></div>
+   
     <div id="main-view">
-       <div id="app-container" style="display: none;"></div>
-
+    
         <div id="next-match-panel" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             <h4 style="margin-top: 0; display: flex; align-items: center; gap: 10px; color: #ffffff !important; margin-bottom: 10px;">
                 📢 เตรียมตัวลงสนาม (Next Match)

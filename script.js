@@ -43,8 +43,11 @@ function createRoom() {
     // 🪄 สั่งสลับหน้าจอ: ซ่อนหน้า Lobby และโชว์หน้าสนามแบด
     document.getElementById('landing-page').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
-    
-    alert("🔥 สร้างห้องสำเร็จ!\nรหัสห้องของมึงคือ: " + currentRoomId);
+    // 🔥 ท่อนสำคัญ: สั่งให้มันวาดคอร์ทและคิวลงบนหน้าจอใหม่ทันที!
+    renderCourts();
+    renderQueue();
+    updateDashboard();
+    alert("🔥 สร้างห้องสำเร็จ!\nรหัสห้องคือ: " + currentRoomId);
     saveData(); // สั่งเซฟเพื่อจองห้องบน Firebase
 }
 
@@ -52,7 +55,7 @@ function createRoom() {
 function joinRoom() {
     const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
     if (codeInput.length < 8) {
-        alert("ใส่รหัสห้องให้ครบดิวะ!");
+        alert("ใส่รหัสห้องให้ครบ!");
         return;
     }
     currentRoomId = codeInput;
@@ -60,9 +63,12 @@ function joinRoom() {
     
     // ลูกก๊วนต้องโดนพรางตา ห้ามกดปุ่ม!
     document.body.classList.add('view-mode');
-    
     document.getElementById('landing-page').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
+// 🔥 ท่อนสำคัญ: สั่งวาดหน้าจอเหมือนกัน (แต่คนนี้จะกดปุ่มไม่ได้เพราะติด view-mode)
+    renderCourts();
+    renderQueue();
+    updateDashboard();
 }
 // --- ฟังก์ชันเช็คว่าเปิดหน้าต่างค้างอยู่มั้ย (ที่มึงเผลอลบทิ้งไป) ---
 function isModalOpen() {
@@ -94,10 +100,14 @@ function saveData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
     // 🚀 ยิงขึ้น Firebase เลยตรงๆ
+    // 🚀 ยิงขึ้น Firebase ตามรหัสห้องที่เราอยู่
     if (typeof db !== 'undefined') {
-        db.collection('rooms').doc('main-court').set(data)
-          .then(() => console.log("☁️ Data Synced to Firebase สำเร็จเว้ย!"))
-          .catch((error) => console.error("❌ Error writing to Firebase: ", error));
+        // ถ้ามีรหัสห้อง (currentRoomId) ให้ใช้รหัสนั้น ถ้าไม่มีให้ใช้ 'main-court'
+        const roomIdToSave = currentRoomId ? currentRoomId : 'main-court'; 
+        
+        db.collection('rooms').doc(roomIdToSave).set(data)
+          .then(() => console.log("☁️ Synced to Room:", roomIdToSave))
+          .catch((error) => console.error("❌ Firebase Error: ", error));
     }
 }
 

@@ -9,10 +9,13 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  
+  <!-- 1. หน้า Lobby ต้องอยู่บนสุด และไม่มี display:none -->
+    <div id="landing-page" style="text-align: center; margin-top: 100px;">
+         ...ปุ่มสร้างห้อง...
+    </div>
 
     <div id="main-view">
-        <div id="courts-container" class="courts-area-grid"></div>
+       <div id="app-container" style="display: none;"></div>
 
         <div id="next-match-panel" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             <h4 style="margin-top: 0; display: flex; align-items: center; gap: 10px; color: #ffffff !important; margin-bottom: 10px;">

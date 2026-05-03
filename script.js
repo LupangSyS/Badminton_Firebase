@@ -35,41 +35,57 @@ function generateRoomCode() {
     return `${d}${m}-${code}`; 
 }
 
-// 👑 ฟังก์ชันสำหรับเจ้าของก๊วน (Host)
+// 👑 ฟังก์ชันสร้างห้อง (Host) - อัปเกรดแล้ว!
 function createRoom() {
     currentRoomId = generateRoomCode();
     isHost = true;
     
-    // 🪄 สั่งสลับหน้าจอ: ซ่อนหน้า Lobby และโชว์หน้าสนามแบด
+    // 1. สลับหน้าจอซ่อน Lobby
     document.getElementById('landing-page').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
-    // 🔥 ท่อนสำคัญ: สั่งให้มันวาดคอร์ทและคิวลงบนหน้าจอใหม่ทันที!
+    
+    // 2. เอาเลขห้องไปแปะโชว์บนหน้าเว็บ! (มึงจะได้ไม่บ่นว่าไม่เห็นเลขห้อง)
+    document.getElementById('display-room-id').innerText = currentRoomId;
+    document.getElementById('display-role').innerText = "👑 HOST (คนคุม)";
+    document.getElementById('display-role').style.background = "#e74c3c";
+    
+    // 3. บังคับให้ระบบเตรียมข้อมูลและวาดคอร์ทใหม่ทันที (แก้บั๊กคอร์ทหาย)
+    if (players.length === 0) players = []; 
     renderCourts();
     renderQueue();
     updateDashboard();
-    alert("🔥 สร้างห้องสำเร็จ!\nรหัสห้องคือ: " + currentRoomId);
-    saveData(); // สั่งเซฟเพื่อจองห้องบน Firebase
+    
+    // 4. เซฟขึ้น Firebase จองห้องไว้เลย
+    saveData(); 
 }
 
-// 📱 ฟังก์ชันสำหรับลูกก๊วน (Viewer)
+// 📱 ฟังก์ชันเข้าร่วมห้อง (Viewer) - อัปเกรดแล้ว!
 function joinRoom() {
     const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
     if (codeInput.length < 8) {
-        alert("ใส่รหัสห้องให้ครบ!");
+        alert("ใส่รหัสห้องให้ครบดิวะตาแหกดูด้วย!");
         return;
     }
+    
     currentRoomId = codeInput;
     isHost = false;
     
-    // ลูกก๊วนต้องโดนพรางตา ห้ามกดปุ่ม!
+    // 1. สลับหน้าจอ พรางตาซ่อนปุ่ม
     document.body.classList.add('view-mode');
     document.getElementById('landing-page').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
-// 🔥 ท่อนสำคัญ: สั่งวาดหน้าจอเหมือนกัน (แต่คนนี้จะกดปุ่มไม่ได้เพราะติด view-mode)
+    
+    // 2. เอาเลขห้องไปแปะโชว์ว่าเป็นลูกก๊วน
+    document.getElementById('display-room-id').innerText = currentRoomId;
+    document.getElementById('display-role').innerText = "📱 VIEWER (ดูอย่างเดียว)";
+    document.getElementById('display-role').style.background = "#7f8c8d";
+
+    // 3. บังคับวาดหน้าจอรอรับข้อมูล
     renderCourts();
     renderQueue();
     updateDashboard();
 }
+
 // --- ฟังก์ชันเช็คว่าเปิดหน้าต่างค้างอยู่มั้ย (ที่มึงเผลอลบทิ้งไป) ---
 function isModalOpen() {
     const booking = document.getElementById('booking-modal');

@@ -53,9 +53,7 @@ function createRoom() {
     document.getElementById('display-role').style.background = "#e74c3c";
     
     if (players.length === 0) players = []; 
-    renderCourts();
-    updateQueueDisplay();
-    updateDashboard();
+    syncFromFirebase();
     
     saveData(); 
 }
@@ -84,9 +82,7 @@ function joinRoom() {
     document.getElementById('display-role').style.background = "#7f8c8d";
 
   
-    renderCourts();
-    updateQueueDisplay();
-    updateDashboard();
+    syncFromFirebase();
   db.collection('rooms').doc(currentRoomId).onSnapshot(doc => {
     if (doc.exists) restoreState(JSON.stringify(doc.data()));
 });
@@ -1414,11 +1410,42 @@ window.onload = function() {
         }
 
         // วาดหน้าจอให้พร้อมใช้งาน
-        renderCourts();
-        updateQueueDisplay();
-        updateDashboard();
+        syncFromFirebase();
         
         console.log("🔄 กู้ชีพสำเร็จ! กลับเข้าห้อง:", currentRoomId, "สถานะ Host:", isHost);
     }
+  // 📡 ฟังก์ชันหูทิพย์ ดักฟัง Firebase แบบ Real-time
+function syncFromFirebase() {
+    if (typeof db === 'undefined') return;
+    
+    // onSnapshot คือการเปิดช่องเชื่อมต่อทิ้งไว้ ใครขยับข้อมูลปุ๊บ มันดูดมาวาดใหม่ปั๊บ!
+    db.collection('rooms').doc(currentRoomId).onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            
+            // 1. เอาข้อมูลจาก Cloud กลับมายัดใส่สมองเบราว์เซอร์
+            players = data.players || [];
+            courtCount = data.courtCount || 2;
+            
+            // ดึงสถานะคอร์ทกลับมา (ถ้าเพิ่งสร้างห้องใหม่ให้สร้างคอร์ทเปล่ารอ)
+            if (data.courts) {
+                courts = data.courts;
+            } else if (typeof courts !== 'undefined' && courts.length === 0) {
+                for(let i=0; i<courtCount; i++) courts.push({ players: [], startTime: null });
+            }
+            
+            pairingHistory = data.pairingHistory || {};
+            opponentHistory = data.opponentHistory || {};
+            completedGameTimes = data.completedGameTimes || [];
+            
+            // 2. สั่งวาดหน้าจอใหม่ทันทีด้วยข้อมูลอัปเดตล่าสุด!
+            renderCourts();
+            renderQueue();
+            updateDashboard();
+            
+            console.log("📡 ข้อมูล Sync จาก Firebase เรียบร้อย!");
+        }
+    });
+}
 };
 init();

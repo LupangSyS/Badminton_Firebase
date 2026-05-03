@@ -54,13 +54,12 @@ function createRoom() {
     
     if (players.length === 0) players = []; 
     renderCourts();
-    renderQueue();
+    updateQueueDisplay();
     updateDashboard();
     
     saveData(); 
 }
 
-// 📱 ฟังก์ชันเข้าร่วมห้อง (Viewer) - เพิ่มระบบจำรหัส
 // 📱 ฟังก์ชันเข้าร่วมห้อง (Viewer) - เพิ่มระบบจำรหัส
 function joinRoom() {
     const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
@@ -85,34 +84,7 @@ function joinRoom() {
     document.getElementById('display-role').style.background = "#7f8c8d";
 
     renderCourts();
-    renderQueue();
-    updateDashboard();
-}
-
-// 📱 ฟังก์ชันเข้าร่วมห้อง (Viewer) - อัปเกรดแล้ว!
-function joinRoom() {
-    const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
-    if (codeInput.length < 8) {
-        alert("ใส่รหัสห้องให้ครบดิวะตาแหกดูด้วย!");
-        return;
-    }
-    
-    currentRoomId = codeInput;
-    isHost = false;
-    
-    // 1. สลับหน้าจอ พรางตาซ่อนปุ่ม
-    document.body.classList.add('view-mode');
-    document.getElementById('landing-page').style.display = 'none';
-    document.getElementById('app-container').style.display = 'block';
-    
-    // 2. เอาเลขห้องไปแปะโชว์ว่าเป็นลูกก๊วน
-    document.getElementById('display-room-id').innerText = currentRoomId;
-    document.getElementById('display-role').innerText = "📱 VIEWER (ดูอย่างเดียว)";
-    document.getElementById('display-role').style.background = "#7f8c8d";
-
-    // 3. บังคับวาดหน้าจอรอรับข้อมูล
-    renderCourts();
-    renderQueue();
+    updateQueueDisplay();
     updateDashboard();
 }
 
@@ -1439,7 +1411,7 @@ window.onload = function() {
 
         // วาดหน้าจอให้พร้อมใช้งาน
         renderCourts();
-        renderQueue();
+        updateQueueDisplay();
         updateDashboard();
         
         console.log("🔄 กู้ชีพสำเร็จ! กลับเข้าห้อง:", currentRoomId, "สถานะ Host:", isHost);

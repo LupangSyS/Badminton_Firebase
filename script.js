@@ -83,9 +83,13 @@ function joinRoom() {
     document.getElementById('display-role').innerText = "📱 VIEWER (ดูอย่างเดียว)";
     document.getElementById('display-role').style.background = "#7f8c8d";
 
+  
     renderCourts();
     updateQueueDisplay();
     updateDashboard();
+  db.collection('rooms').doc(currentRoomId).onSnapshot(doc => {
+    if (doc.exists) restoreState(JSON.stringify(doc.data()));
+});
 }
 
 // --- ฟังก์ชันเช็คว่าเปิดหน้าต่างค้างอยู่มั้ย (ที่มึงเผลอลบทิ้งไป) ---

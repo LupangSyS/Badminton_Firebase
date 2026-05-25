@@ -1030,19 +1030,39 @@ function resolveGame(winningTeamIdx) {
             if(pl) { pl.winStreak = 0; pl.mmr = (pl.mmr || 0) - 25; if (pl.mmr < 0) pl.mmr = 0; }
         });
 
+        // -----------------------------------------
+        // โค้ดของเวฟ: เช็คโควต้าแยกรายคน กันบั๊กเปลี่ยนตัวกลางคัน
+        // -----------------------------------------
         let stayers = [], leavers = [];
         const rule = court.rule || 'normal';
+
         if (rule === 'normal') {
             leavers.push(...t1, ...t2);
-        } else {
-            const q1 = players.find(x => x.id === t1[0].id).sessionGames;
-            const q2 = players.find(x => x.id === t2[0].id).sessionGames;
-            if (q1 < 2 && q2 < 2) {
-                if (winningTeamIdx === 0) { stayers.push(...t1); leavers.push(...t2); }
-                else { stayers.push(...t2); leavers.push(...t1); }
+        } else if (rule === 'winner_stay') {
+            
+            // 1. เช็คก่อนว่าในคอร์ทนี้ มี "ทหารผ่านศึก" (คนที่ตีครบ 2 เกมแล้ว) ผสมอยู่ไหม?
+            const hasVeteran = court.players.some(p => {
+                const pl = players.find(x => x.id === p.id);
+                return pl && pl.sessionGames >= 2;
+            });
+
+            if (!hasVeteran) {
+                // Phase เกมแรก: ยังไม่มีใครตีครบโควต้า -> วัดแพ้ชนะปกติ ใครชนะอยู่ต่อ
+                if (winningTeamIdx === 0) { 
+                    stayers.push(...t1); leavers.push(...t2); 
+                } else { 
+                    stayers.push(...t2); leavers.push(...t1); 
+                }
             } else {
-                if (q1 >= 2) leavers.push(...t1); else stayers.push(...t1);
-                if (q2 >= 2) leavers.push(...t2); else stayers.push(...t2);
+                // Phase เกมสอง+: มีคนครบโควต้าแล้ว -> ใครครบ 2 เกมเตะออก ใครเพิ่งตี 1 เกมให้ยืนรอ (ไม่สนแพ้ชนะ)
+                court.players.forEach(p => {
+                    const pl = players.find(x => x.id === p.id);
+                    if (pl && pl.sessionGames >= 2) {
+                        leavers.push(p); // ครบโควต้า อัญเชิญออก
+                    } else {
+                        stayers.push(p); // เพิ่งเกมแรก ให้อยู่รอเหยื่อรายต่อไป
+                    }
+                });
             }
         }
         leavers.forEach(p => sendToQueue(p.id));

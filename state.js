@@ -1,1 +1,15 @@
-
+// --- Data ---
+let players = [];
+let courts = [];  
+let courtCount = 2;
+let bookingCounter = 0;
+let activeGameResolveCourtId = null;
+let pairingHistory = {};
+let opponentHistory = {};
+let matchLogs = [];
+let isRankedMode = false;
+let isAntiDejaVuMode = false;
+let isMMRMode = false;
+let completedGameTimes = [];
+const DEFAULT_GAME_TIME = 15;
+const AUTO_START_DELAY = 30;

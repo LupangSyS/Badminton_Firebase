@@ -55,7 +55,7 @@ function createRoom() {
     if (players.length === 0) players = []; 
     syncFromFirebase();
     
-    saveData(); 
+    triggerSave(); 
 }
 
 // 📱 ฟังก์ชันเข้าร่วมห้อง (Viewer) - เพิ่มระบบจำรหัส
@@ -99,7 +99,19 @@ function isModalOpen() {
 function saveData() {
     const ruleEl = document.getElementById('game-rule');
     const ruleValue = ruleEl ? ruleEl.value : 'normal';
+  
+let saveTimeout = null;
 
+// กูสร้างฟังก์ชันนี้ขึ้นมาเป็น "ตัวรับจบ" ให้มึงใช้แทน saveData() ตัวเดิม
+function triggerSave() {
+    // ถ้ามีการสั่งเซฟเข้ามารัวๆ กูจะเคลียร์คิวเก่าทิ้งก่อน
+    if (saveTimeout) clearTimeout(saveTimeout);
+    
+    // ตั้งเวลารอให้นิ่งๆ 1.5 วินาที แล้วค่อยส่งขึ้น Firebase ทีเดียว
+    saveTimeout = setTimeout(() => {
+        saveData(); // เรียกตัวจริงทำงานตรงนี้
+    }, 1500); 
+}
     const data = {
         players: players,
         courts: courts.map(c => ({...c, interval: null})),
@@ -210,7 +222,7 @@ const toggleGender = (id) => {
     if (!p) return;
     p.gender = (p.gender === 'F') ? 'M' : 'F';
     updateQueueDisplay();
-    saveData();
+   triggerSave();
 };
 
 const RANK_SCORES = { 'P': 4, 'S': 3, 'N': 2, 'BG': 1 };
@@ -299,8 +311,6 @@ function init() {
 
     renderCourts();
     updateQueueDisplay();
-   
-    setInterval(saveData, 5000);
 
     setInterval(() => {
         if (!isModalOpen()) autoFillCourts();
@@ -350,7 +360,7 @@ function toggleRankedMode() {
         alert('👌 ปิดโหมดจัดอันดับ');
     }
     updateNextMatchPanel();
-    saveData();
+    triggerSave();
 }
 
 function toggleMMRMode() {
@@ -365,7 +375,7 @@ function toggleMMRMode() {
         alert('👌 ปิดโหมด MMR');
     }
     updateNextMatchPanel(); 
-    saveData();
+    triggerSave();
 }
 
 // 👇 ฟังก์ชันเปิดปิดโหมดผี
@@ -427,7 +437,7 @@ function addPlayers() {
     });
     input.value = '';
     updateQueueDisplay();
-    saveData();
+    triggerSave();
 }
 
 const removePlayer = (id) => {
@@ -448,7 +458,7 @@ const removePlayer = (id) => {
     }
     players = players.filter(p => p.id !== id);
     updateQueueDisplay();
-    saveData();
+    triggerSave();
 };
 
 function resetStatsOnly() {
@@ -492,21 +502,21 @@ function setCourtRule(courtIdx, newRule) {
     courts[courtIdx].rule = newRule;
     renderCourts();
     updateQueueDisplay();
-    saveData();
+    triggerSave();
 }
 function toggleRankFilter(idx) {
     courts[idx].isRankFilterOn = !courts[idx].isRankFilterOn;
-    renderCourts(); saveData();
+    renderCourts(); triggerSave();
 }
 
 function setCourtRankMin(idx, val) {
     courts[idx].minRank = val;
-    renderCourts(); saveData();
+    renderCourts(); triggerSave();
 }
 
 function setCourtRankMax(idx, val) {
     courts[idx].maxRank = val;
-    renderCourts(); saveData();
+    renderCourts(); triggerSave();
 }
 
 function renderCourts() {
@@ -705,7 +715,7 @@ const fillCourtSmart = (courtIdx) => {
     } else {
         alert('❌ คนในคิว (ที่ตรงตามเงื่อนไข Rank) ไม่พอครับ');
     }
-    saveData();
+    triggerSave();
 };
 
 const fillCourtQueue = (courtIdx) => {
@@ -968,7 +978,7 @@ function startGame(courtIdx) {
     const p2 = court.players[2]; const p3 = court.players[3];
     if (p0 && p2) recordOpponent(p0.id, p2.id); if (p0 && p3) recordOpponent(p0.id, p3.id);
     if (p1 && p2) recordOpponent(p1.id, p2.id); if (p1 && p3) recordOpponent(p1.id, p3.id);
-    renderCourts(); saveData();
+    renderCourts(); triggerSave();
 }
 
 function stopGame(courtIdx) {
@@ -1071,7 +1081,7 @@ function resolveGame(winningTeamIdx) {
     }
     court.timer = 0;
     renderCourts();
-    saveData();
+    triggerSave();
 }
 
 function sendToQueue(playerId) { 
@@ -1218,7 +1228,7 @@ const confirmBooking = () => {
     if (unique.size !== ids.length) { alert('❌ ห้ามเลือกชื่อซ้ำ'); return; }
     const bId = 'book-' + (++bookingCounter);
     ids.forEach(x => { const p = players.find(pl => pl.id == x.id); if (p) { p.bookingId = bId; p.bookingTeam = x.team; } });
-    closeModal('booking-modal'); updateQueueDisplay(); renderCourts(); saveData();
+    closeModal('booking-modal'); updateQueueDisplay(); renderCourts(); triggerSave();
 };
 
 function updateQueueDisplay() {
@@ -1261,7 +1271,7 @@ const cancelBooking = (bId) => {
     if(group.length === 0) return;
     if(!confirm(`ยกเลิกจองกลุ่มนี้?`)) return;
     players.forEach(p => { if(p.bookingId === bId) { p.bookingId = null; p.bookingTeam = null; } });
-    updateQueueDisplay(); saveData();
+    updateQueueDisplay(); triggerSave();
 };
 
 const toggleRest = (id) => { const p = players.find(x => x.id === id); if (p) { p.isResting = !p.isResting; updateQueueDisplay(); renderCourts(); } };

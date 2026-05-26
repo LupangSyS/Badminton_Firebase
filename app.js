@@ -33,45 +33,10 @@ function isModalOpen() {
 }
 
 
-    const data = {
-        players: players,
-        courts: courts.map(c => ({...c, interval: null})),
-        courtCount: courtCount,
-        pairingHistory: pairingHistory,
-        opponentHistory: opponentHistory,
-        matchLogs: matchLogs,
-        bookingCounter: bookingCounter,
-        gameRule: ruleValue, 
-        rankedMode: isRankedMode,
-        mmrMode: isMMRMode,
-        completedGameTimes: completedGameTimes,
-        lastUpdated: new Date().toISOString()
-    };
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-
-    // 🚀 ยิงขึ้น Firebase เลยตรงๆ
-    // 🚀 ยิงขึ้น Firebase ตามรหัสห้องที่เราอยู่
-    if (typeof db !== 'undefined') {
-        // ถ้ามีรหัสห้อง (currentRoomId) ให้ใช้รหัสนั้น ถ้าไม่มีให้ใช้ 'main-court'
-        const roomIdToSave = currentRoomId ? currentRoomId : 'main-court'; 
-        
-        db.collection('rooms').doc(roomIdToSave).set(data)
-          .then(() => console.log("☁️ Synced to Room:", roomIdToSave))
-          .catch((error) => console.error("❌ Firebase Error: ", error));
-    }
-}
-
-
-
 const countRealPlayers = (court) => {
     return court.players.filter(p => p !== null && p !== undefined).length;
 };
 
-// --- LEVEL & BALANCING SYSTEM ---
-const LEVEL_WEIGHTS = { 'BG': 1, 'N': 2, 'S': 3, 'P': 4 };
-const RANK_LEVELS = ['BG', 'N', 'S', 'P'];
-const LEVEL_COLORS = { 'BG': '#bdbdbd', 'N': '#66bb6a', 'S': '#ffa726', 'P': '#ef5350' };
 
 const toggleLevel = (id) => {
     const p = players.find(x => x.id === id);
@@ -90,7 +55,6 @@ const toggleGender = (id) => {
    triggerSave();
 };
 
-const RANK_SCORES = { 'P': 4, 'S': 3, 'N': 2, 'BG': 1 };
 
 
 

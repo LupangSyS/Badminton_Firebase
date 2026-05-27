@@ -233,14 +233,13 @@ function findBestOpponentInfinite(currentTeam, fullPool, usedIds, targetMMR = nu
 const autoBalanceTeam = (candidates) => {
     if (candidates.some(p => p.bookingId) || candidates.length !== 4) return candidates;
 
-    const combinations = [,,];
-    let bestCombo = combinations;
+    const combinations = [[0, 1, 2, 3], [0, 2, 1, 3], [0, 3, 1, 2]];
+    let bestCombo = combinations[0];
     let minDiffScore = Infinity;
 
     combinations.forEach(combo => {
-        // 👇 บรรทัดนี้แหละที่มึงชอบทำพัง! ดูให้ดีว่ามี combo, combo ครบ!
-        const p1 = candidates[combo]; const p2 = candidates[combo];
-        const p3 = candidates[combo]; const p4 = candidates[combo];
+        const p1 = candidates[combo[0]]; const p2 = candidates[combo[1]];
+        const p3 = candidates[combo[2]]; const p4 = candidates[combo[3]];
 
         const team1Power = getPlayerPower(p1) + getPlayerPower(p2);
         const team2Power = getPlayerPower(p3) + getPlayerPower(p4);
@@ -262,8 +261,7 @@ const autoBalanceTeam = (candidates) => {
         }
     });
 
-    // 👇 ท่อน Return ก็ต้องมีเลข Index ครบนะเว้ย!
-    return [candidates[bestCombo], candidates[bestCombo], candidates[bestCombo], candidates[bestCombo]];
+    return [candidates[bestCombo[0]], candidates[bestCombo[1]], candidates[bestCombo[2]], candidates[bestCombo[3]]];
 };
 
   function getPlayerPower(p) {

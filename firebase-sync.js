@@ -14,22 +14,43 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 console.log("Firebase is ready to use");
 
-// 👇 เอาฟังก์ชัน saveData ใหม่ไปทับของเดิมด้วย!
+// 👇 เซ็ตระบบ Save แบบ Debounce
+let saveTimeout = null;
+
+function triggerSave() {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        saveData(); 
+    }, 1500); 
+}
+
 function saveData() {
     const ruleEl = document.getElementById('game-rule');
     const ruleValue = ruleEl ? ruleEl.value : 'normal';
-  
-let saveTimeout = null;
 
-// กูสร้างฟังก์ชันนี้ขึ้นมาเป็น "ตัวรับจบ" ให้มึงใช้แทน saveData() ตัวเดิม
-function triggerSave() {
-    // ถ้ามีการสั่งเซฟเข้ามารัวๆ กูจะเคลียร์คิวเก่าทิ้งก่อน
-    if (saveTimeout) clearTimeout(saveTimeout);
-    
-    // ตั้งเวลารอให้นิ่งๆ 1.5 วินาที แล้วค่อยส่งขึ้น Firebase ทีเดียว
-    saveTimeout = setTimeout(() => {
-        saveData(); // เรียกตัวจริงทำงานตรงนี้
-    }, 1500); 
+    const data = {
+        players: players,
+        courts: courts.map(c => ({...c, interval: null})),
+        courtCount: courtCount,
+        pairingHistory: pairingHistory,
+        opponentHistory: opponentHistory,
+        matchLogs: matchLogs,
+        bookingCounter: bookingCounter,
+        gameRule: ruleValue, 
+        rankedMode: isRankedMode,
+        mmrMode: isMMRMode,
+        completedGameTimes: completedGameTimes,
+        lastUpdated: new Date().toISOString()
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+    if (typeof db !== 'undefined') {
+        const roomIdToSave = currentRoomId ? currentRoomId : 'main-court'; 
+        db.collection('rooms').doc(roomIdToSave).set(data)
+          .then(() => console.log("☁️ Synced to Room:", roomIdToSave))
+          .catch((error) => console.error("❌ Firebase Error: ", error));
+    }
 }
 
 function loadData() {

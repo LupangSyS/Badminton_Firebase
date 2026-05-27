@@ -174,7 +174,15 @@ function findBestPartnerInfinite(captain, fullPool, usedIds, rankCheckList = [],
                 finalScore = pairPenalty + rankPenalty + i;
             }
         }
-        if (finalScore < minScore) { minScore = finalScore; best = c; }
+        if (finalScore < minScore) { 
+            minScore = finalScore; 
+            best = c; 
+            
+            // 🔥 โค้ดที่เวฟอัปเกรดให้: Early Exit!
+            // ถ้า finalScore เท่ากับ i เป๊ะ แปลว่าคนนี้ไม่มี Penalty อะไรมาถ่วงเลย (เพอร์เฟกต์)
+            // ให้ break หยุดลูปทันที แล้วลากคอคนนี้ลงคอร์ทเลย ไม่ต้องเสียเวลาหาคนอื่นต่อ!
+            if (finalScore === i) break; 
+        }
     }
     return best;
 }
@@ -210,7 +218,14 @@ function findBestOpponentInfinite(currentTeam, fullPool, usedIds, targetMMR = nu
             else if (maxDiff >= 2) rankPenalty = 500;
         }
         const totalScore = conflictScore + extraScore + rankPenalty + i;
-        if (totalScore < minScore) { minScore = totalScore; best = c; }
+        if (totalScore < minScore) { 
+            minScore = totalScore; 
+            best = c; 
+            
+            // 🔥 โค้ดที่เวฟอัปเกรดให้: Early Exit!
+            // เจอทีมฝ่ายตรงข้ามที่เพอร์เฟกต์ปุ๊บ หยุดหาทันที!
+            if (totalScore === i) break; 
+        }
     }
     return best;
 }

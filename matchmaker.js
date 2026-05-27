@@ -260,7 +260,7 @@ const autoBalanceTeam = (candidates) => {
             bestCombo = combo;
         }
     });
-return [candidates[bestCombo], candidates[bestCombo], candidates[bestCombo], candidates[bestCombo]];
+
 };
 
   function getPlayerPower(p) {

@@ -63,10 +63,6 @@ function getWinRate(p) {
 }
 
 
-
-    return [candidates[bestCombo[0]], candidates[bestCombo[1]], candidates[bestCombo[2]], candidates[bestCombo[3]]];
-};
-
 const addPlayerToCourt = (court, player) => {
     let emptyIdx = court.players.findIndex(p => p === null || p === undefined);
     if (emptyIdx !== -1) {

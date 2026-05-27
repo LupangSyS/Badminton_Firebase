@@ -259,9 +259,8 @@ const autoBalanceTeam = (candidates) => {
             minDiffScore = totalBadness;
             bestCombo = combo;
         }
-    }); // 👈 ปิด forEach ตรงนี้โว้ย! ห้ามเอา return ไปยัดข้างใน!
+    });
 
-    // 👈 return ต้องอยู่ข้างนอก forEach และต้องมี,,, ให้ครบ!
     return [candidates[bestCombo], candidates[bestCombo], candidates[bestCombo], candidates[bestCombo]];
 };
 

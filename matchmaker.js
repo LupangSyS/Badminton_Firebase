@@ -238,6 +238,7 @@ const autoBalanceTeam = (candidates) => {
     let minDiffScore = Infinity;
 
     combinations.forEach(combo => {
+        // 👇 บรรทัดนี้แหละที่มึงชอบทำพัง! ดูให้ดีว่ามี combo, combo ครบ!
         const p1 = candidates[combo]; const p2 = candidates[combo];
         const p3 = candidates[combo]; const p4 = candidates[combo];
 
@@ -261,6 +262,7 @@ const autoBalanceTeam = (candidates) => {
         }
     });
 
+    // 👇 ท่อน Return ก็ต้องมีเลข Index ครบนะเว้ย!
     return [candidates[bestCombo], candidates[bestCombo], candidates[bestCombo], candidates[bestCombo]];
 };
 

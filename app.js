@@ -390,9 +390,14 @@ function closeAndRest(idx) {
 
 function renderPlayerOnCourt(player, courtIdx, slotIdx) {
     if (!player) return `<div class="player-on-court" style="cursor:pointer; opacity:0.7; background:#f0f0f0; color:#888; border:2px dashed #ccc;" onclick="openManualAddModal(${courtIdx})" title="จิ้มเพื่อเลือกคนลง">+ ว่าง</div>`;
+    
+    // 👇 โค้ดของกู: บังคับดึงข้อมูลล่าสุดจาก State หลักเสมอ กันบั๊กข้อมูลหลุดจากกัน
+    const pl = players.find(x => x.id === player.id) || player;
+
     const rule = courts[courtIdx].rule || 'normal';
-    let badge = (rule === 'winner_stay') ? `<span class="quota-badge" style="background:${player.sessionGames >= 1 ? '#e67e22' : '#27ae60'}">G: ${player.sessionGames + 1}/2</span>` : '';
-    return `<div class="player-on-court" title="เปลี่ยนตัว" onclick="kickPlayer(${courtIdx}, ${slotIdx})"><strong>${player.name}</strong><span style="font-size:0.8em; margin-top:2px;">(${player.gamesPlayed}P)</span>${badge}</div>`;
+    let badge = (rule === 'winner_stay') ? `<span class="quota-badge" style="background:${pl.sessionGames >= 1 ? '#e67e22' : '#27ae60'}">G: ${pl.sessionGames + 1}/2</span>` : '';
+    
+    return `<div class="player-on-court" title="เปลี่ยนตัว" onclick="kickPlayer(${courtIdx}, ${slotIdx})"><strong>${pl.name}</strong><span style="font-size:0.8em; margin-top:2px;">(${pl.gamesPlayed}P)</span>${badge}</div>`;
 }
 
 function renderCourtButtons(court, idx) {

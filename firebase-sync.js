@@ -128,7 +128,7 @@ function createRoom() {
     
     if (players.length === 0) players = []; 
     syncFromFirebase();
-    
+    syncProfiles();
     triggerSave(); 
 }
 
@@ -160,6 +160,7 @@ function joinRoom() {
   db.collection('rooms').doc(currentRoomId).onSnapshot(doc => {
     if (doc.exists) restoreState(JSON.stringify(doc.data()));
 });
+  syncProfiles();
 }
 
 function syncFromFirebase() {
@@ -192,5 +193,16 @@ function syncFromFirebase() {
             
             console.log("📡 ข้อมูล Sync จาก Firebase เรียบร้อย!");
         }
+    });
+}
+
+function syncProfiles() {
+    if (typeof db === 'undefined') return;
+    db.collection('players_profile').onSnapshot(snapshot => {
+        cachedProfiles = [];
+        snapshot.forEach(doc => {
+            cachedProfiles.push(doc.data());
+        });
+        console.log("📥 โหลดรายชื่อผู้เล่นทั้งหมดมาเก็บใน Cache แล้ว:", cachedProfiles.length, "คน");
     });
 }

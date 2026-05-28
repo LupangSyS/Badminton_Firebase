@@ -45,6 +45,7 @@ const toggleLevel = (id) => {
     const currentIdx = levels.indexOf(p.level || 'BG');
     p.level = levels[(currentIdx + 1) % levels.length];
     updateQueueDisplay();
+    savePlayerProfileToCloud(p);
 };
 
 const toggleGender = (id) => {
@@ -53,6 +54,7 @@ const toggleGender = (id) => {
     p.gender = (p.gender === 'F') ? 'M' : 'F';
     updateQueueDisplay();
    triggerSave();
+    savePlayerProfileToCloud(p);
 };
 
 
@@ -179,23 +181,21 @@ function recordOpponent(id1, id2) {
 }
 function getOpponentCount(id1, id2) { return opponentHistory[getPairKey(id1, id2)] || 0; }
 
-function addPlayers() {
+async function addPlayers() {
     const input = document.getElementById('new-players');
     const rawText = input.value.trim();
     if (!rawText) return;
     const names = rawText.split('\n').map(n => n.trim()).filter(n => n);
-    let maxGamesInSystem = 0;
-    players.forEach(p => { if(p.gamesPlayed > maxGamesInSystem) maxGamesInSystem = p.gamesPlayed; });
-
-    names.forEach(name => {
+    
+    for (let name of names) {
         let cleanName = name.replace(/^[\d]+\.[\s]*/, '');
+        if (!cleanName) continue;
+        
         let joinTime = Date.now();
         let isFastPass = false;
-        if (maxGamesInSystem > 2) {
-            joinTime = Date.now() - (60 * 60 * 1000);
-            isFastPass = true;
-        }
-        players.push({
+        
+        // ร่าง Object สำหรับใช้งานภายในคิว ณ เซสชันนี้
+        let profile = {
             id: Date.now() + Math.random(),
             name: cleanName,
             level: 'BG',
@@ -208,11 +208,41 @@ function addPlayers() {
             winStreak: 0,
             sessionGames: 0,
             isFastPass: isFastPass,
-            checkInTime: new Date(),
+            checkInTime: new Date().toISOString(),
             isResting: false,
             mmr: 100
-        });
-    });
+        };
+
+        if (typeof db !== 'undefined') {
+            try {
+                // วิ่งไปเช็คในฐานข้อมูลโปรไฟล์ถาวร
+                const doc = await db.collection('players_profile').doc(cleanName).get();
+                if (doc.exists) {
+                    const cloudData = doc.data();
+                    profile.level = cloudData.level || 'BG';
+                    profile.gender = cloudData.gender || 'M';
+                    profile.gamesPlayed = cloudData.gamesPlayed || 0;
+                    profile.wins = cloudData.wins || 0;
+                    profile.mmr = typeof cloudData.mmr !== 'undefined' ? cloudData.mmr : 100;
+                    console.log(`🎯 เจอโปรไฟล์เก่าของ ${cleanName} บน Cloud โหลดสถิติเรียบร้อย`);
+                } else {
+                    // ถ้าไม่เจอโปรไฟล์เลย ให้สร้างฐานข้อมูลคนนี้เก็บไว้ใหม่
+                    await db.collection('players_profile').doc(cleanName).set({
+                        name: cleanName,
+                        level: 'BG',
+                        gender: 'M',
+                        gamesPlayed: 0,
+                        wins: 0,
+                        mmr: 100
+                    });
+                    console.log(`🆕 สร้างโปรไฟล์ถาวรใหม่ให้ ${cleanName} เรียบร้อย`);
+                }
+            } catch (err) {
+                console.error("Firebase Profile Error:", err);
+            }
+        }
+        players.push(profile);
+    }
     input.value = '';
     updateQueueDisplay();
     triggerSave();
@@ -600,11 +630,13 @@ function resolveGame(winningTeamIdx) {
        
         winners.forEach(p => {
             const pl = players.find(x => x.id === p.id);
-            if(pl) { pl.wins++; pl.winStreak = (pl.winStreak || 0) + 1; pl.mmr = (pl.mmr || 0) + 25; }
+            if(pl) { pl.wins++; pl.winStreak = (pl.winStreak || 0) + 1; pl.mmr = (pl.mmr || 0) + 25;
+                   savePlayerProfileToCloud(pl);}
         });
         losers.forEach(p => {
             const pl = players.find(x => x.id === p.id);
-            if(pl) { pl.winStreak = 0; pl.mmr = (pl.mmr || 0) - 25; if (pl.mmr < 0) pl.mmr = 0; }
+            if(pl) { pl.winStreak = 0; pl.mmr = (pl.mmr || 0) - 25; if (pl.mmr < 0) pl.mmr = 0;
+                   savePlayerProfileToCloud(pl);}
         });
 
         // -----------------------------------------
@@ -1012,6 +1044,19 @@ window.onload = function() {
         console.log("🔄 กู้ชีพสำเร็จ! กลับเข้าห้อง:", currentRoomId, "สถานะ Host:", isHost);
     }
 
+    function savePlayerProfileToCloud(player) {
+    if (typeof db === 'undefined' || !player) return;
+    db.collection('players_profile').doc(player.name).set({
+        name: player.name,
+        level: player.level || 'BG',
+        gender: player.gender || 'M',
+        gamesPlayed: player.gamesPlayed || 0,
+        wins: player.wins || 0,
+        mmr: typeof player.mmr !== 'undefined' ? player.mmr : 100
+    }, { merge: true })
+    .then(() => console.log(`💾 ซิงค์โปรไฟล์ถาวรของ ${player.name} เรียบร้อย`))
+    .catch(err => console.error("Error saving profile:", err));
+}
 
 };
 init();

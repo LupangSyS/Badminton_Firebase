@@ -1011,40 +1011,7 @@ function copyShareLink() {
     copyText.select(); document.execCommand("copy"); alert("ก๊อปปี้แล้ว!");
 }
 
-// 🔄 ระบบกู้ชีพ (Auto-Login) เมื่อเผลอกด Refresh หน้าเว็บ
-window.onload = function() {
-    const savedRoomId = sessionStorage.getItem('ROOM_ID');
-    const savedIsHost = sessionStorage.getItem('IS_HOST');
-
-    // ถ้ามีรหัสห้องจำไว้ แปลว่าเพิ่ง Refresh มา ให้ข้าม Lobby ไปเลย!
-    if (savedRoomId) {
-        currentRoomId = savedRoomId;
-        isHost = (savedIsHost === 'true'); // แปลงค่ากลับเป็น boolean
-
-        // ซ่อน Lobby ทิ้ง
-        document.getElementById('landing-page').style.display = 'none';
-        document.getElementById('app-container').style.display = 'block';
-
-        // แปะป้ายรหัสห้อง
-        document.getElementById('display-room-id').innerText = currentRoomId;
-        
-        // เช็คว่าเป็น Host หรือ Viewer เพื่อจัดการปุ่ม
-        if (isHost) {
-            document.getElementById('display-role').innerText = "👑 HOST (คนคุม)";
-            document.getElementById('display-role').style.background = "#e74c3c";
-        } else {
-            document.body.classList.add('view-mode');
-            document.getElementById('display-role').innerText = "📱 VIEWER (ดูอย่างเดียว)";
-            document.getElementById('display-role').style.background = "#7f8c8d";
-        }
-
-        // วาดหน้าจอให้พร้อมใช้งาน
-        syncFromFirebase();
-        
-        console.log("🔄 กู้ชีพสำเร็จ! กลับเข้าห้อง:", currentRoomId, "สถานะ Host:", isHost);
-    }
-
-    function savePlayerProfileToCloud(player) {
+function savePlayerProfileToCloud(player) {
     if (typeof db === 'undefined' || !player) return;
     db.collection('players_profile').doc(player.name).set({
         name: player.name,
@@ -1058,5 +1025,29 @@ window.onload = function() {
     .catch(err => console.error("Error saving profile:", err));
 }
 
+// ส่วน window.onload ก็ให้มันอยู่ของมันไป
+window.onload = function() {
+    const savedRoomId = sessionStorage.getItem('ROOM_ID');
+    const savedIsHost = sessionStorage.getItem('IS_HOST');
+
+    if (savedRoomId) {
+        currentRoomId = savedRoomId;
+        isHost = (savedIsHost === 'true');
+        document.getElementById('landing-page').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        document.getElementById('display-room-id').innerText = currentRoomId;
+        
+        if (isHost) {
+            document.getElementById('display-role').innerText = "👑 HOST (คนคุม)";
+            document.getElementById('display-role').style.background = "#e74c3c";
+        } else {
+            document.body.classList.add('view-mode');
+            document.getElementById('display-role').innerText = "📱 VIEWER (ดูอย่างเดียว)";
+            document.getElementById('display-role').style.background = "#7f8c8d";
+        }
+        syncFromFirebase();
+        console.log("🔄 กู้ชีพสำเร็จ! กลับเข้าห้อง:", currentRoomId, "สถานะ Host:", isHost);
+    }
 };
+
 init();

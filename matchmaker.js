@@ -122,7 +122,7 @@ function findBestPartnerInfinite(captain, fullPool, usedIds, rankCheckList = [],
     let best = null; let minScore = Infinity;
     const capScore = RANK_SCORES[captain.level || 'BG'] || 1;
     const capMMR = captain.mmr || 0;
-    const capGender = captain.gender || 'M'; // 👈 เช็คเพศกัปตัน
+    const capGender = captain.gender || 'M';
    
     for (let i = 0; i < fullPool.length; i++) {
         const c = fullPool[i];
@@ -130,6 +130,10 @@ function findBestPartnerInfinite(captain, fullPool, usedIds, rankCheckList = [],
         const cGender = c.gender || 'M';
         if (capGender === 'F' && cGender === 'F') continue;
         let finalScore = 0;
+
+        // 👻 โหมดหนีเจ้ากรรมนายเวร (ผลักคนที่เคยเจอหน้าบนคอร์ทออกไปไกลๆ)
+        const isGhostMode = (typeof isAntiDejaVuMode !== 'undefined' && isAntiDejaVuMode);
+        const opPenalty = isGhostMode ? (getOpponentCount(captain.id, c.id) * 800000) : 0;
 
         if (isMMRMode && !isForce) {
             const queueCost = i * 100; 
@@ -142,7 +146,7 @@ function findBestPartnerInfinite(captain, fullPool, usedIds, rankCheckList = [],
                 mmrCost = Math.abs(capMMR - partnerMMR) * 100;
             }
             const pairCost = getPairCount(captain.id, c.id) * 1000000;
-            finalScore = queueCost + mmrCost + pairCost;
+            finalScore = queueCost + mmrCost + pairCost + opPenalty;
         } else if (isForce) {
              const queueCost = i * 1000; 
              let balanceCost = 0;
@@ -151,12 +155,12 @@ function findBestPartnerInfinite(captain, fullPool, usedIds, rankCheckList = [],
                 balanceCost = Math.abs(myTeamScore - targetScore) * 2500; 
              }
              const pairCost = getPairCount(captain.id, c.id) * 3000; 
-             finalScore = queueCost + balanceCost + pairCost;
+             finalScore = queueCost + balanceCost + pairCost + (isGhostMode ? getOpponentCount(captain.id, c.id) * 1500 : 0);
         } else {
              if (isPity && targetScore !== null) {
                  const cScore = RANK_SCORES[c.level || 'BG'] || 1;
                  const ourTeamSum = capScore + cScore;
-                 finalScore = (getPairCount(captain.id, c.id) * 1000000) + (Math.abs(ourTeamSum - targetScore) * 1000) + i;
+                 finalScore = (getPairCount(captain.id, c.id) * 1000000) + (Math.abs(ourTeamSum - targetScore) * 1000) + opPenalty + i;
             } else {
                 const pairPenalty = (getPairCount(captain.id, c.id) >= 2) ? 999999999 : getPairCount(captain.id, c.id) * 1000000;
                 let rankPenalty = 0;
@@ -171,17 +175,13 @@ function findBestPartnerInfinite(captain, fullPool, usedIds, rankCheckList = [],
                         if (diffEx === 1) rankPenalty += 5; else if (diffEx >= 2) rankPenalty += 500;
                     }
                 }
-                finalScore = pairPenalty + rankPenalty + i;
+                finalScore = pairPenalty + opPenalty + rankPenalty + i;
             }
         }
         if (finalScore < minScore) { 
             minScore = finalScore; 
             best = c; 
-            
-            // 🔥 โค้ดที่เวฟอัปเกรดให้: Early Exit!
-            // ถ้า finalScore เท่ากับ i เป๊ะ แปลว่าคนนี้ไม่มี Penalty อะไรมาถ่วงเลย (เพอร์เฟกต์)
-            // ให้ break หยุดลูปทันที แล้วลากคอคนนี้ลงคอร์ทเลย ไม่ต้องเสียเวลาหาคนอื่นต่อ!
-            if (finalScore === i) break; 
+            if (finalScore === i) break; // Early Exit ยังอยู่เหมือนเดิม
         }
     }
     return best;
@@ -189,14 +189,24 @@ function findBestPartnerInfinite(captain, fullPool, usedIds, rankCheckList = [],
 
 function findBestOpponentInfinite(currentTeam, fullPool, usedIds, targetMMR = null) {
     let best = null; let minScore = Infinity;
+    const isGhostMode = (typeof isAntiDejaVuMode !== 'undefined' && isAntiDejaVuMode);
+
     for (let i = 0; i < fullPool.length; i++) {
         const c = fullPool[i];
         if (usedIds.has(c.id) || c.bookingId) continue;
         let conflictScore = 0;
+        
         currentTeam.forEach(member => {
             const opCount = getOpponentCount(member.id, c.id);
             conflictScore += (opCount >= 2) ? 100000000 : (opCount * 1000000);
+            
+            // 👻 โหมดหนีเจ้ากรรมนายเวร: ถ้าเคยอยู่ทีมเดียวกันมาก่อน ก็ห้ามกลับมาเจอกันในฐานะศัตรูง่ายๆ
+            if (isGhostMode) {
+                const pairCount = getPairCount(member.id, c.id);
+                conflictScore += pairCount * 800000; 
+            }
         });
+
         let extraScore = 0;
         let rankPenalty = 0;
 
@@ -221,9 +231,6 @@ function findBestOpponentInfinite(currentTeam, fullPool, usedIds, targetMMR = nu
         if (totalScore < minScore) { 
             minScore = totalScore; 
             best = c; 
-            
-            // 🔥 โค้ดที่เวฟอัปเกรดให้: Early Exit!
-            // เจอทีมฝ่ายตรงข้ามที่เพอร์เฟกต์ปุ๊บ หยุดหาทันที!
             if (totalScore === i) break; 
         }
     }

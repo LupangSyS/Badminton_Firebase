@@ -187,6 +187,10 @@ async function addPlayers() {
     if (!rawText) return;
     const names = rawText.split('\n').map(n => n.trim()).filter(n => n);
     
+    // 👇 โค้ดที่มึงลบทิ้งไป กูเอามาคืนให้แล้ว! หาจำนวนเกมสูงสุดในระบบตอนนี้
+    let maxGamesInSystem = 0;
+    players.forEach(p => { if(p.gamesPlayed > maxGamesInSystem) maxGamesInSystem = p.gamesPlayed; });
+
     for (let name of names) {
         let cleanName = name.replace(/^[\d]+\.[\s]*/, '');
         if (!cleanName) continue;
@@ -194,6 +198,12 @@ async function addPlayers() {
         let joinTime = Date.now();
         let isFastPass = false;
         
+        // 👇 โลจิก Fast Track กลับมาแล้ว! ถ้าคนอื่นตีไปเกิน 2 เกม เด็กใหม่จะได้จรวดลัดคิว
+        if (maxGamesInSystem > 2) {
+            joinTime = Date.now() - (60 * 60 * 1000); // โกงเวลาถอยหลัง 1 ชม.
+            isFastPass = true;
+        }
+
         // ร่าง Object สำหรับใช้งานภายในคิว ณ เซสชันนี้
         let profile = {
             id: Date.now() + Math.random(),

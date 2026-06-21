@@ -655,19 +655,63 @@ function resolveGame(winningTeamIdx) {
         
         court.gameStartTime = null; 
         renderMatchLog();
-       
+       // -----------------------------------------
+        // ⚖️ ระบบคำนวณแต้ม MMR แบบ Elo Rating ฝีมือเวฟ
+        // -----------------------------------------
+        
+        // 1. ฟังก์ชันหาค่าเฉลี่ย MMR ของทีม
+        const getAvgMMR = (team) => {
+            if (team.length === 0) return 100;
+            let sum = 0, count = 0;
+            team.forEach(p => {
+                const pl = players.find(x => x.id === p.id);
+                if(pl) { sum += (pl.mmr !== undefined ? pl.mmr : 100); count++; }
+            });
+            return count > 0 ? sum / count : 100;
+        };
+
+        const t1AvgMMR = getAvgMMR(t1);
+        const t2AvgMMR = getAvgMMR(t2);
+
+        // 2. คำนวณแต้ม Elo 
+        const K = 40; // ค่าความแกว่งของแต้ม (ยิ่งเยอะยิ่งขึ้นลงเร็ว)
+        const winnerAvgMMR = (winningTeamIdx === 0) ? t1AvgMMR : t2AvgMMR;
+        const loserAvgMMR = (winningTeamIdx === 0) ? t2AvgMMR : t1AvgMMR;
+
+        // คำนวณโอกาสชนะ (Expected Score) ของทีมที่ชนะ (ค่าระหว่าง 0 ถึง 1)
+        const expectedWinProb = 1 / (1 + Math.pow(10, (loserAvgMMR - winnerAvgMMR) / 400));
+        
+        // แต้มดิบที่จะเอาไปบวก/ลบ
+        let mmrChange = Math.round(K * (1 - expectedWinProb));
+        
+        // ดักไว้กันแต้มบวกน้อยเกินไป (การันตีบวก/ลบ ขั้นต่ำ 5 แต้ม)
+        const finalChange = Math.max(5, mmrChange);
+
+        console.log(`⚖️ [Elo] ทีมชนะ MMR:${Math.round(winnerAvgMMR)} | ทีมแพ้ MMR:${Math.round(loserAvgMMR)} | โอกาสชนะเดิม:${Math.round(expectedWinProb*100)}% | แต้มสวิง: ${finalChange}`);
+
+        // 3. แจกแต้ม!
         winners.forEach(p => {
             const pl = players.find(x => x.id === p.id);
-            if(pl) { pl.wins++; pl.winStreak = (pl.winStreak || 0) + 1; 
-                    pl.todayWins = (pl.todayWins || 0) + 1;
-                    pl.mmr = (pl.mmr || 0) + 25;
-                   savePlayerProfileToCloud(pl);}
+            if(pl) { 
+                pl.wins++; 
+                pl.winStreak = (pl.winStreak || 0) + 1; 
+                pl.todayWins = (pl.todayWins || 0) + 1;
+                pl.mmr = (pl.mmr !== undefined ? pl.mmr : 100) + finalChange; // 👈 บวกแต้ม
+                savePlayerProfileToCloud(pl);
+            }
         });
+        
         losers.forEach(p => {
             const pl = players.find(x => x.id === p.id);
-            if(pl) { pl.winStreak = 0; pl.mmr = (pl.mmr || 0) - 25; if (pl.mmr < 0) pl.mmr = 0;
-                   savePlayerProfileToCloud(pl);}
+            if(pl) { 
+                pl.winStreak = 0; 
+                pl.mmr = (pl.mmr !== undefined ? pl.mmr : 100) - finalChange; // 👈 ลบแต้ม
+                if (pl.mmr < 0) pl.mmr = 0; // ดักไว้ไม่ให้ติดลบ
+                savePlayerProfileToCloud(pl);
+            }
         });
+        // -----------------------------------------
+       
 
         // -----------------------------------------
         // โค้ดของเวฟ: เช็คโควต้าแยกรายคน กันบั๊กเปลี่ยนตัวกลางคัน

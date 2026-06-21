@@ -728,16 +728,42 @@ function renderMatchLog() {
 function updateDashboard() {
     const tbody = document.getElementById('stats-body');
     const sortType = document.getElementById('sort-select').value;
+    // อ่านค่าสโคปจาก dropdown ใหม่ที่กูทำไว้
+    const scope = document.getElementById('scope-select') ? document.getElementById('scope-select').value : 'today';
+    
     let sorted = [...players].sort((a, b) => {
-        if (sortType === 'games_desc') return b.gamesPlayed - a.gamesPlayed;
-        if (sortType === 'games_asc') return a.gamesPlayed - b.gamesPlayed;
-        if (sortType === 'wins_desc') return b.wins - a.wins;
-        return 0;
+        let valA = 0;
+        let valB = 0;
+        
+        // แยกโมเดลการคัดกรองตามสโคปที่เลือก
+        if (scope === 'today') {
+            if (sortType === 'games_desc' || sortType === 'games_asc') {
+                valA = a.todayGames || 0; valB = b.todayGames || 0;
+            } else if (sortType === 'wins_desc') {
+                valA = a.todayWins || 0; valB = b.todayWins || 0;
+            }
+        } else {
+            if (sortType === 'games_desc' || sortType === 'games_asc') {
+                valA = a.gamesPlayed || 0; valB = b.gamesPlayed || 0;
+            } else if (sortType === 'wins_desc') {
+                valA = a.wins || 0; valB = b.wins || 0;
+            }
+        }
+        
+        if (sortType === 'games_asc') return valA - valB;
+        return valB - valA;
     });
+    
     tbody.innerHTML = sorted.map((p, index) => {
-        let rank = index + 1; let medal = (rank === 1) ? '🥇' : (rank === 2) ? '🥈' : (rank === 3) ? '🥉' : '';
-        const rate = p.gamesPlayed > 0 ? Math.round((p.wins / p.gamesPlayed) * 100) : 0;
-        return `<tr><td>${medal} ${rank}</td><td>${p.name}</td><td style="font-weight:bold; color:#2980b9;">${p.mmr || 0}</td><td>${p.gamesPlayed}</td><td>${p.wins}</td><td>${rate}%</td></tr>`;
+        let rank = index + 1; 
+        let medal = (rank === 1) ? '🥇' : (rank === 2) ? '🥈' : (rank === 3) ? '🥉' : '';
+        
+        // สลับตัวแปรที่จะเอามาโชว์บนตาราง
+        const displayGames = scope === 'today' ? (p.todayGames || 0) : (p.gamesPlayed || 0);
+        const displayWins = scope === 'today' ? (p.todayWins || 0) : (p.wins || 0);
+        const rate = displayGames > 0 ? Math.round((displayWins / displayGames) * 100) : 0;
+        
+        return `<tr><td>${medal} ${rank}</td><td>${p.name}</td><td style="font-weight:bold; color:#2980b9;">${p.mmr || 0}</td><td>${displayGames}</td><td>${displayWins}</td><td>${rate}%</td></tr>`;
     }).join('');
 }
 

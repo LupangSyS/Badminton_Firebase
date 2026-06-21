@@ -284,10 +284,18 @@ const removePlayer = (id) => {
 };
 
 function resetStatsOnly() {
-    if(!confirm('รีเซ็ตสถิติ?')) return;
+    if(!confirm('รีเซ็ตสถิติ? (สำหรับเริ่มเซสชันใหม่)')) return;
     players.forEach(p => {
-        p.gamesPlayed = 0; p.wins = 0; p.sessionGames = 0; p.mmr =0;
-        p.status = 'waiting'; p.joinedQueueAt = Date.now(); p.bookingId = null; p.isFastPass = false;
+        // ❌ ห้ามรีเซ็ต gamesPlayed, wins, mmr เด็ดขาด! มันคือสถิติตลอดชีพ
+        // ✅ ให้รีเซ็ตเฉพาะสถิติของวันนี้เท่านั้น
+        p.todayGames = 0; 
+        p.todayWins = 0; 
+        p.sessionGames = 0; 
+        
+        p.status = 'waiting'; 
+        p.joinedQueueAt = Date.now(); 
+        p.bookingId = null; 
+        p.isFastPass = false;
     });
     pairingHistory = {}; opponentHistory = {}; matchLogs = [];
     renderMatchLog(); resetCourtsState(); updateQueueDisplay();
@@ -775,7 +783,7 @@ function renderOverview(skipUpdateCost = false) {
     statsBody.innerHTML = players.map(p => {
         let time = p.checkInTime ? new Date(p.checkInTime).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}) : '-';
         let costShow = p.calculatedCost ? Math.ceil(p.calculatedCost) : 0;
-        return `<tr><td style="text-align:left">${p.name}</td><td>${time}</td><td>${p.gamesPlayed}</td><td>${p.wins}</td><td style="font-weight:bold; color:#27ae60;">${costShow} ฿</td></tr>`;
+        return `<tr><td style="text-align:left">${p.name}</td><td>${time}</td><td>${p.todayGames || 0}</td><td>${p.todayWins || 0}</td><td style="font-weight:bold; color:#27ae60;">${costShow} ฿</td></tr>`;
     }).join('');
 
     let repeats = [];

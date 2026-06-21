@@ -1049,5 +1049,51 @@ window.onload = function() {
         console.log("🔄 กู้ชีพสำเร็จ! กลับเข้าห้อง:", currentRoomId, "สถานะ Host:", isHost);
     }
 };
+// --- ระบบ Auto Complete ค้นหาชื่อ ---
+document.getElementById('new-players').addEventListener('input', function() {
+    const val = this.value.trim().toLowerCase();
+    const listArea = document.getElementById('autocomplete-list');
+    listArea.innerHTML = '';
+    
+    if (!val) {
+        listArea.style.display = 'none';
+        return;
+    }
+    
+    // ค้นหาคนที่ชื่อมีตัวอักษรที่พิมพ์ (ไม่สนพิมพ์เล็กพิมพ์ใหญ่)
+    const matches = cachedProfiles.filter(p => p.name.toLowerCase().includes(val));
+    
+    if (matches.length > 0) {
+        listArea.style.display = 'block';
+        matches.forEach(match => {
+            const div = document.createElement('div');
+            div.style.padding = '10px';
+            div.style.cursor = 'pointer';
+            div.style.borderBottom = '1px solid #eee';
+            
+            // โชว์ชื่อ พร้อม Rank และ MMR เป็นไกด์ไลน์
+            div.innerHTML = `<strong>${match.name}</strong> <span style="font-size: 0.8em; color: #888; margin-left: 5px;">(Rank: ${match.level}, MMR: ${match.mmr || 100})</span>`;
+            
+            // Effect ตอนเอาเมาส์ชี้
+            div.onmouseover = () => div.style.background = '#f0f4f8';
+            div.onmouseout = () => div.style.background = 'white';
+            
+            // พอกดเลือกปุ๊บ ให้เอาชื่อไปใส่กล่อง แล้วซ่อน Dropdown
+            div.onclick = function() {
+                document.getElementById('new-players').value = match.name;
+                listArea.style.display = 'none';
+            };
+            listArea.appendChild(div);
+        });
+    } else {
+        listArea.style.display = 'none';
+    }
+});
 
+// ดักคลิกที่อื่นในหน้าจอ ให้ซ่อน Dropdown ทิ้ง
+document.addEventListener('click', function (e) {
+    if (e.target.id !== 'new-players') {
+        document.getElementById('autocomplete-list').style.display = 'none';
+    }
+});
 init();

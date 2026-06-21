@@ -1035,7 +1035,6 @@ function savePlayerProfileToCloud(player) {
     .catch(err => console.error("Error saving profile:", err));
 }
 
-// ส่วน window.onload ก็ให้มันอยู่ของมันไป
 window.onload = function() {
     const savedRoomId = sessionStorage.getItem('ROOM_ID');
     const savedIsHost = sessionStorage.getItem('IS_HOST');
@@ -1056,9 +1055,11 @@ window.onload = function() {
             document.getElementById('display-role').style.background = "#7f8c8d";
         }
         syncFromFirebase();
+        syncProfiles(); // 👈 กูเติมให้แล้ว! สั่งดูด Profile มาทำ Auto-Complete ด้วย
         console.log("🔄 กู้ชีพสำเร็จ! กลับเข้าห้อง:", currentRoomId, "สถานะ Host:", isHost);
     }
 };
+
 // --- ระบบ Auto Complete ค้นหาชื่อ ---
 document.getElementById('new-players').addEventListener('input', function() {
     const val = this.value.trim().toLowerCase();

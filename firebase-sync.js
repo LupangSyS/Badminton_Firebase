@@ -194,13 +194,3 @@ function syncFromFirebase() {
     });
 }
 
-function syncProfiles() {
-    if (typeof db === 'undefined') return;
-    db.collection('players_profile').onSnapshot(snapshot => {
-        cachedProfiles = [];
-        snapshot.forEach(doc => {
-            cachedProfiles.push(doc.data());
-        });
-        console.log("📥 โหลดรายชื่อผู้เล่นทั้งหมดมาเก็บใน Cache แล้ว:", cachedProfiles.length, "คน");
-    });
-}

@@ -185,9 +185,10 @@ async function addPlayers() {
     const input = document.getElementById('new-players');
     const rawText = input.value.trim();
     if (!rawText) return;
+    // หั่นบรรทัด กรองชื่อว่างทิ้ง
     const names = rawText.split('\n').map(n => n.trim()).filter(n => n);
     
-    // 👇 โค้ดที่มึงลบทิ้งไป กูเอามาคืนให้แล้ว! หาจำนวนเกมสูงสุดในระบบตอนนี้
+    // หาจำนวนเกมสูงสุดในระบบ เพื่อเช็คให้สิทธิ์ Fast Track
     let maxGamesInSystem = 0;
     players.forEach(p => { if(p.gamesPlayed > maxGamesInSystem) maxGamesInSystem = p.gamesPlayed; });
 
@@ -198,13 +199,13 @@ async function addPlayers() {
         let joinTime = Date.now();
         let isFastPass = false;
         
-        // 👇 โลจิก Fast Track กลับมาแล้ว! ถ้าคนอื่นตีไปเกิน 2 เกม เด็กใหม่จะได้จรวดลัดคิว
+        // โลจิก Fast Track (จรวด)
         if (maxGamesInSystem > 2) {
-            joinTime = Date.now() - (60 * 60 * 1000); // โกงเวลาถอยหลัง 1 ชม.
+            joinTime = Date.now() - (60 * 60 * 1000); 
             isFastPass = true;
         }
 
-        // ร่าง Object สำหรับใช้งานภายในคิว ณ เซสชันนี้
+        // ร่าง Object
         let profile = {
             id: Date.now() + Math.random(),
             name: cleanName,
@@ -225,9 +226,9 @@ async function addPlayers() {
             mmr: 100
         };
 
+        // ☁️ วิ่งไปเช็คและดึงข้อมูลจาก Firebase เงียบๆ แบบไม่ให้ใครรู้
         if (typeof db !== 'undefined') {
             try {
-                // วิ่งไปเช็คในฐานข้อมูลโปรไฟล์ถาวร
                 const doc = await db.collection('players_profile').doc(cleanName).get();
                 if (doc.exists) {
                     const cloudData = doc.data();
@@ -236,9 +237,8 @@ async function addPlayers() {
                     profile.gamesPlayed = cloudData.gamesPlayed || 0;
                     profile.wins = cloudData.wins || 0;
                     profile.mmr = typeof cloudData.mmr !== 'undefined' ? cloudData.mmr : 100;
-                    console.log(`🎯 เจอโปรไฟล์เก่าของ ${cleanName} บน Cloud โหลดสถิติเรียบร้อย`);
+                    console.log(`🎯 ดึงโปรไฟล์ ${cleanName} จาก Cloud สำเร็จ`);
                 } else {
-                    // ถ้าไม่เจอโปรไฟล์เลย ให้สร้างฐานข้อมูลคนนี้เก็บไว้ใหม่
                     await db.collection('players_profile').doc(cleanName).set({
                         name: cleanName,
                         level: 'BG',
@@ -247,7 +247,7 @@ async function addPlayers() {
                         wins: 0,
                         mmr: 100
                     });
-                    console.log(`🆕 สร้างโปรไฟล์ถาวรใหม่ให้ ${cleanName} เรียบร้อย`);
+                    console.log(`🆕 สร้างโปรไฟล์ใหม่ให้ ${cleanName} ลง Cloud`);
                 }
             } catch (err) {
                 console.error("Firebase Profile Error:", err);
@@ -1067,7 +1067,7 @@ function savePlayerProfileToCloud(player) {
         wins: player.wins || 0,
         mmr: typeof player.mmr !== 'undefined' ? player.mmr : 100
     }, { merge: true })
-    .then(() => console.log(`💾 ซิงค์โปรไฟล์ถาวรของ ${player.name} เรียบร้อย`))
+    .then(() => console.log(`💾 ซิงค์โปรไฟล์ของ ${player.name} ลง Cloud`))
     .catch(err => console.error("Error saving profile:", err));
 }
 
@@ -1137,10 +1137,5 @@ document.getElementById('new-players').addEventListener('input', function() {
     }
 });
 
-// ดักคลิกที่อื่นในหน้าจอ ให้ซ่อน Dropdown ทิ้ง
-document.addEventListener('click', function (e) {
-    if (e.target.id !== 'new-players') {
-        document.getElementById('autocomplete-list').style.display = 'none';
-    }
-});
+
 init();

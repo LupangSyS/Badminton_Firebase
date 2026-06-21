@@ -188,9 +188,11 @@ async function addPlayers() {
     // หั่นบรรทัด กรองชื่อว่างทิ้ง
     const names = rawText.split('\n').map(n => n.trim()).filter(n => n);
     
-    // หาจำนวนเกมสูงสุดในระบบ เพื่อเช็คให้สิทธิ์ Fast Track
+
     let maxGamesInSystem = 0;
-    players.forEach(p => { if(p.gamesPlayed > maxGamesInSystem) maxGamesInSystem = p.gamesPlayed; });
+    players.forEach(p => { 
+        if((p.todayGames || 0) > maxGamesInSystem) maxGamesInSystem = (p.todayGames || 0); 
+    });
 
     for (let name of names) {
         let cleanName = name.replace(/^[\d]+\.[\s]*/, '');
@@ -439,7 +441,7 @@ function renderPlayerOnCourt(player, courtIdx, slotIdx) {
     const rule = courts[courtIdx].rule || 'normal';
     let badge = (rule === 'winner_stay') ? `<span class="quota-badge" style="background:${pl.sessionGames >= 1 ? '#e67e22' : '#27ae60'}">G: ${pl.sessionGames + 1}/2</span>` : '';
     
-    return `<div class="player-on-court" title="เปลี่ยนตัว" onclick="kickPlayer(${courtIdx}, ${slotIdx})"><strong>${pl.name}</strong><span style="font-size:0.8em; margin-top:2px;">(${pl.gamesPlayed}P)</span>${badge}</div>`;
+    return `<div class="player-on-court" title="เปลี่ยนตัว" onclick="kickPlayer(${courtIdx}, ${slotIdx})"><strong>${pl.name}</strong><span style="font-size:0.8em; margin-top:2px;">(${pl.todayGames || 0}P)</span>${badge}</div>`;
 }
 
 function renderCourtButtons(court, idx) {

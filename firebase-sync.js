@@ -131,7 +131,8 @@ function createRoom() {
     triggerSave(); 
 }
 
-// 📱 ฟังก์ชันเข้าร่วมห้อง (Viewer) - เพิ่มระบบจำรหัส
+// ... (ส่วน Config บนสุดปล่อยไว้เหมือนเดิม) ...
+
 function joinRoom() {
     const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
     if (codeInput.length < 8) {
@@ -142,7 +143,6 @@ function joinRoom() {
     currentRoomId = codeInput;
     isHost = false;
     
-    // 🔥 ฝังชิปความจำลง sessionStorage!
     sessionStorage.setItem('ROOM_ID', currentRoomId);
     sessionStorage.setItem('IS_HOST', 'false');
     
@@ -154,26 +154,19 @@ function joinRoom() {
     document.getElementById('display-role').innerText = "📱 VIEWER (ดูอย่างเดียว)";
     document.getElementById('display-role').style.background = "#7f8c8d";
 
-    syncFromFirebase();
-  db.collection('rooms').doc(currentRoomId).onSnapshot(doc => {
-    if (doc.exists) restoreState(JSON.stringify(doc.data()));
-});
-
+    syncFromFirebase(); // 👈 เหลือแค่นี้พอ ท่อเดียวจบ!
 }
 
 function syncFromFirebase() {
     if (typeof db === 'undefined') return;
     
-    // onSnapshot คือการเปิดช่องเชื่อมต่อทิ้งไว้ ใครขยับข้อมูลปุ๊บ มันดูดมาวาดใหม่ปั๊บ!
     db.collection('rooms').doc(currentRoomId).onSnapshot((doc) => {
         if (doc.exists) {
             const data = doc.data();
             
-            // 1. เอาข้อมูลจาก Cloud กลับมายัดใส่สมองเบราว์เซอร์
             players = data.players || [];
             courtCount = data.courtCount || 2;
             
-            // ดึงสถานะคอร์ทกลับมา (ถ้าเพิ่งสร้างห้องใหม่ให้สร้างคอร์ทเปล่ารอ)
             if (data.courts) {
                 courts = data.courts;
             } else if (typeof courts !== 'undefined' && courts.length === 0) {
@@ -184,9 +177,8 @@ function syncFromFirebase() {
             opponentHistory = data.opponentHistory || {};
             completedGameTimes = data.completedGameTimes || [];
             
-            // 2. สั่งวาดหน้าจอใหม่ทันทีด้วยข้อมูลอัปเดตล่าสุด!
             renderCourts();
-            renderQueue();
+            updateQueueDisplay(); // 👈 กูแก้ชื่อให้ถูกแล้ว!
             updateDashboard();
             
             console.log("📡 ข้อมูล Sync จาก Firebase เรียบร้อย!");

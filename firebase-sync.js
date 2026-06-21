@@ -129,6 +129,7 @@ function createRoom() {
     if (players.length === 0) players = []; 
     syncFromFirebase();
     syncProfiles();
+    syncProfiles();
     triggerSave(); 
 }
 
@@ -155,7 +156,7 @@ function joinRoom() {
     document.getElementById('display-role').innerText = "📱 VIEWER (ดูอย่างเดียว)";
     document.getElementById('display-role').style.background = "#7f8c8d";
 
-  
+    syncProfiles();
     syncFromFirebase();
   db.collection('rooms').doc(currentRoomId).onSnapshot(doc => {
     if (doc.exists) restoreState(JSON.stringify(doc.data()));

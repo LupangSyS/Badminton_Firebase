@@ -23,7 +23,7 @@
         .avatar-img {
             width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
             border: 4px solid #3498db; margin-bottom: 15px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); background: #eee;
         }
         .rank-badge {
             position: absolute; top: 15px; right: 15px; font-weight: bold;
@@ -34,14 +34,16 @@
         .btn-edit {
             margin-top: 15px; padding: 8px 15px; background: #95a5a6; color: white;
             border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.8em;
+            transition: 0.2s;
         }
         .btn-edit:hover { background: #7f8c8d; }
+        .btn-edit.loading { background: #f39c12; cursor: wait; }
     </style>
 </head>
 <body>
 
     <h1>🏆 Hall of Fame</h1>
-    <p style="text-align: center;">ฐานข้อมูลผู้เล่นทั้งหมดจาก Firebase</p>
+    <p style="text-align: center;">ฐานข้อมูลผู้เล่นทั้งหมด (อัปโหลดรูปตรงขึ้น Firebase)</p>
 
     <div class="grid-container" id="database-grid">
         <div style="text-align:center; width:100%; grid-column: 1 / -1;">กำลังโหลดข้อมูลดาต้าเบส... ⏳</div>
@@ -49,9 +51,10 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-storage-compat.js"></script>
 
     <script>
-        // Config ตัวเดิมของมึงเป๊ะๆ
+        // Config ตัวเดิมเป๊ะๆ
         const firebaseConfig = {
             apiKey: "AIzaSyCnrkEbVOM3i7f59rAnWN9mgPC9iekEuIA",
             authDomain: "badminton-manager-e77bb.firebaseapp.com",
@@ -63,10 +66,11 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const storage = firebase.storage(); // เรียกใช้ Storage
 
         const LEVEL_COLORS = { 'BG': '#bdbdbd', 'N': '#66bb6a', 'S': '#ffa726', 'P': '#ef5350' };
 
-        // ฟังชันก์ดึงข้อมูลแบบ Realtime
+        // ดึงข้อมูลรายชื่อมาวาดแบบ Real-time
         db.collection('players_profile').onSnapshot(snapshot => {
             const grid = document.getElementById('database-grid');
             grid.innerHTML = '';
@@ -74,21 +78,19 @@
             let players = [];
             snapshot.forEach(doc => { players.push(doc.data()); });
             
-            // เรียงลำดับตาม MMR จากมากไปน้อย
+            // เรียงลำดับจาก MMR มากไปน้อย
             players.sort((a, b) => (b.mmr || 0) - (a.mmr || 0));
 
             players.forEach(p => {
                 const rankColor = LEVEL_COLORS[p.level || 'BG'];
-                // ถ้ายกเว็บนี้ไปเปิดแล้วไม่มีรูป ให้เสกรูป default จากชื่อ
                 const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff&size=200`;
                 const avatar = p.avatarUrl || defaultAvatar;
-                
                 const winRate = p.gamesPlayed > 0 ? Math.round((p.wins / p.gamesPlayed) * 100) : 0;
 
                 grid.innerHTML += `
                     <div class="player-card">
                         <div class="rank-badge" style="background: ${rankColor};">${p.level || 'BG'}</div>
-                        <img src="${avatar}" class="avatar-img" title="คลิกเพื่อเปลี่ยนรูป" onclick="updateAvatar('${p.name}')" onerror="this.src='${defaultAvatar}'">
+                        <img src="${avatar}" class="avatar-img" id="img-${p.name}" title="คลิกเพื่อเปลี่ยนรูป" onclick="triggerUpload('${p.name}')" onerror="this.src='${defaultAvatar}'">
                         <h2 style="margin: 0 0 15px 0;">${p.name}</h2>
                         
                         <div class="stat-row"><span>⚔️ MMR:</span> <span class="stat-val" style="color:#8e44ad; font-size:1.1em;">${p.mmr || 100}</span></div>
@@ -96,25 +98,62 @@
                         <div class="stat-row"><span>🏆 ชนะ:</span> <span class="stat-val">${p.wins || 0} ครั้ง</span></div>
                         <div class="stat-row"><span>🔥 อัตราชนะ:</span> <span class="stat-val">${winRate}%</span></div>
                         
-                        <button class="btn-edit" onclick="updateAvatar('${p.name}')">✏️ เปลี่ยนรูป</button>
+                        <button class="btn-edit" id="btn-${p.name}" onclick="triggerUpload('${p.name}')">📸 อัปโหลดรูป</button>
                     </div>
                 `;
             });
         });
 
-        // ฟังก์ชันรับลิงก์รูปใหม่ แล้วบันทึกลง Firebase
-        function updateAvatar(playerName) {
-            const newUrl = prompt(`ใส่ "ลิงก์รูปภาพ (URL)" สำหรับ ${playerName}\n(ไปก๊อปลิงก์รูปจากเน็ตมาวาง):`);
-            if (newUrl && newUrl.trim() !== "") {
-                db.collection('players_profile').doc(playerName).update({
-                    avatarUrl: newUrl.trim()
-                }).then(() => {
-                    console.log(`อัปเดตรูปของ ${playerName} แล้ว!`);
-                }).catch(err => {
-                    alert("เปลี่ยนรูปไม่ได้ว่ะ! ติด Permission หรือเปล่า?");
+// ----------------------------------------------------
+        // ระบบอัปโหลดภาพแบบแหกค่าย (ฝาก ImgBB แทน Firebase Storage)
+        // ----------------------------------------------------
+        function triggerUpload(playerName) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const btn = document.getElementById(`btn-${playerName}`);
+                if(btn) { btn.innerText = "⏳ กำลังอัปโหลด..."; btn.classList.add('loading'); }
+
+                // ⚠️ เอา API Key ที่มึงก๊อปมาจากเว็บ ImgBB มาใส่ตรงนี้!
+                const IMGBB_API_KEY = "c9ff031ac308e07a851d4e25c2f7f02b"; 
+
+                // ห่อไฟล์เตรียมส่งไป ImgBB
+                const formData = new FormData();
+                formData.append('image', file);
+
+                try {
+                    // วิ่งไปฝากรูปที่ ImgBB
+                    const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const newImageUrl = data.data.url;
+                        
+                        // เอาลิงก์ที่ ImgBB คืนมา ไปเซฟลง Firestore ของเรา
+                        await db.collection('players_profile').doc(playerName).update({
+                            avatarUrl: newImageUrl
+                        });
+                        console.log(`✅ อัปเดตรูป ${playerName} สำเร็จ!`);
+                    } else {
+                        alert("❌ อัปโหลดรูปไม่ผ่านว่ะ! ฝั่ง ImgBB มันเตะกลับมา");
+                    }
+                } catch (err) {
+                    alert("❌ สคริปต์พัง! มึงใส่ API Key ถูกป่าวเนี่ย?");
                     console.error(err);
-                });
-            }
+                } finally {
+                    if(btn) { btn.innerText = "📸 อัปโหลดรูป"; btn.classList.remove('loading'); }
+                }
+            };
+            
+            input.click();
         }
     </script>
 </body>

@@ -129,7 +129,6 @@ function createRoom() {
     if (players.length === 0) players = []; 
     syncFromFirebase();
     syncProfiles();
-    syncProfiles();
     triggerSave(); 
 }
 
@@ -161,7 +160,7 @@ function joinRoom() {
   db.collection('rooms').doc(currentRoomId).onSnapshot(doc => {
     if (doc.exists) restoreState(JSON.stringify(doc.data()));
 });
-  syncProfiles();
+
 }
 
 function syncFromFirebase() {

@@ -187,14 +187,14 @@ async function addPlayers() {
     if (!rawText) return;
     // หั่นบรรทัด กรองชื่อว่างทิ้ง
     const names = rawText.split('\n').map(n => n.trim()).filter(n => n);
-    
+    const uniqueNames = [...new Set(names)];
 
     let maxGamesInSystem = 0;
     players.forEach(p => { 
         if((p.todayGames || 0) > maxGamesInSystem) maxGamesInSystem = (p.todayGames || 0); 
     });
 
-    for (let name of names) {
+    for (let name of uniqueNames) {
         let cleanName = name.replace(/^[\d]+\.[\s]*/, '');
         if (!cleanName) continue;
         
@@ -681,22 +681,17 @@ function resolveGame(winningTeamIdx) {
         // คำนวณโอกาสชนะ (Expected Score) ของทีมที่ชนะ (ค่าระหว่าง 0 ถึง 1)
         const expectedWinProb = 1 / (1 + Math.pow(10, (loserAvgMMR - winnerAvgMMR) / 400));
         
-        // แต้มดิบที่จะเอาไปบวก/ลบ
-        let mmrChange = Math.round(K * (1 - expectedWinProb));
-        
-        // ดักไว้กันแต้มบวกน้อยเกินไป (การันตีบวก/ลบ ขั้นต่ำ 5 แต้ม)
-        const finalChange = Math.max(5, mmrChange);
+       let mmrChange = Math.round(K * (1 - expectedWinProb));
+        const winnerGain = Math.max(5, mmrChange); // คนชนะการันตีได้อย่างน้อย 5 แต้ม
+        const loserDrop = mmrChange; // ส่วนคนแพ้ หักตามจริง (ถ้าเจอของแข็ง อาจจะโดนหักแค่ 0-1 แต้ม)
 
-        console.log(`⚖️ [Elo] ทีมชนะ MMR:${Math.round(winnerAvgMMR)} | ทีมแพ้ MMR:${Math.round(loserAvgMMR)} | โอกาสชนะเดิม:${Math.round(expectedWinProb*100)}% | แต้มสวิง: ${finalChange}`);
+        console.log(`⚖️ [Elo] ชนะได้: +${winnerGain} | แพ้เสีย: -${loserDrop}`);
 
-        // 3. แจกแต้ม!
         winners.forEach(p => {
             const pl = players.find(x => x.id === p.id);
             if(pl) { 
-                pl.wins++; 
-                pl.winStreak = (pl.winStreak || 0) + 1; 
-                pl.todayWins = (pl.todayWins || 0) + 1;
-                pl.mmr = (pl.mmr !== undefined ? pl.mmr : 100) + finalChange; // 👈 บวกแต้ม
+                pl.wins++; pl.winStreak = (pl.winStreak || 0) + 1; pl.todayWins = (pl.todayWins || 0) + 1;
+                pl.mmr = (pl.mmr !== undefined ? pl.mmr : 100) + winnerGain; // 👈 ใช้ winnerGain
                 savePlayerProfileToCloud(pl);
             }
         });
@@ -705,8 +700,8 @@ function resolveGame(winningTeamIdx) {
             const pl = players.find(x => x.id === p.id);
             if(pl) { 
                 pl.winStreak = 0; 
-                pl.mmr = (pl.mmr !== undefined ? pl.mmr : 100) - finalChange; // 👈 ลบแต้ม
-                if (pl.mmr < 0) pl.mmr = 0; // ดักไว้ไม่ให้ติดลบ
+                pl.mmr = (pl.mmr !== undefined ? pl.mmr : 100) - loserDrop; // 👈 ใช้ loserDrop
+                if (pl.mmr < 0) pl.mmr = 0; 
                 savePlayerProfileToCloud(pl);
             }
         });

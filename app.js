@@ -212,6 +212,8 @@ async function addPlayers() {
             gender: 'M',
             gamesPlayed: 0,
             wins: 0,
+            todayGames: 0,
+            todayWins: 0,
             status: 'waiting',
             joinedQueueAt: joinTime,
             bookingId: null,
@@ -590,13 +592,19 @@ function startGame(courtIdx) {
 
 function stopGame(courtIdx) {
     const court = courts[courtIdx]; clearInterval(court.interval);
-    court.players.forEach(p => { const pl = players.find(x => x.id === p.id); if(pl) { pl.gamesPlayed++; pl.sessionGames++; } });
+    court.players.forEach(p => { const pl = players.find(x => x.id === p.id); 
+                                if(pl) {    pl.gamesPlayed++;
+                                            pl.sessionGames++;
+                                            pl.todayGames = (pl.todayGames || 0) + 1;} });
     activeGameResolveCourtId = courtIdx; document.getElementById('winner-modal').style.display = 'flex';
 }
 
 function cancelStopGame() {
     const court = courts[activeGameResolveCourtId];
-    court.players.forEach(p => { const pl = players.find(x => x.id === p.id); if(pl) { pl.gamesPlayed--; pl.sessionGames--; } });
+    court.players.forEach(p => { const pl = players.find(x => x.id === p.id); 
+                                if(pl) {pl.gamesPlayed--;
+                                        pl.sessionGames--;
+                                        pl.todayGames = Math.max(0, (pl.todayGames || 0) - 1);} });
     court.interval = setInterval(() => { court.timer++; document.getElementById(`timer-${activeGameResolveCourtId}`).innerText = formatTime(court.timer); }, 1000);
     document.getElementById('winner-modal').style.display = 'none'; activeGameResolveCourtId = null; renderCourts();
 }
@@ -640,7 +648,9 @@ function resolveGame(winningTeamIdx) {
        
         winners.forEach(p => {
             const pl = players.find(x => x.id === p.id);
-            if(pl) { pl.wins++; pl.winStreak = (pl.winStreak || 0) + 1; pl.mmr = (pl.mmr || 0) + 25;
+            if(pl) { pl.wins++; pl.winStreak = (pl.winStreak || 0) + 1; 
+                    pl.todayWins = (pl.todayWins || 0) + 1;
+                    pl.mmr = (pl.mmr || 0) + 25;
                    savePlayerProfileToCloud(pl);}
         });
         losers.forEach(p => {

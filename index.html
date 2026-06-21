@@ -105,15 +105,20 @@
 
             </div>
 
-            <div class="stats-column pastel-panel panel-green">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h3>📊 แดชบอร์ด</h3>
-                    <select id="sort-select" onchange="updateDashboard()" style="padding:5px; border-radius:6px;">
-                        <option value="games_desc">เล่นเยอะสุด (Games ⬇)</option>
-                        <option value="games_asc">เล่นน้อยสุด (Games ⬆)</option>
-                        <option value="wins_desc">ชนะเยอะสุด (Wins ⬇)</option>
-                    </select>
-                </div>
+           <div style="display:flex; justify-content:space-between; align-items:center; gap: 5px;">
+    <h3>📊 แดชบอร์ด</h3>
+    <div style="display:flex; gap:5px;">
+        <select id="scope-select" onchange="updateDashboard()" style="padding:5px; border-radius:6px; font-weight:bold; background:#fff; border:1px solid #ccc; cursor:pointer;">
+            <option value="today">📊 วันนี้</option>
+            <option value="total">🌍 รวมทั้งหมด</option>
+        </select>
+        <select id="sort-select" onchange="updateDashboard()" style="padding:5px; border-radius:6px;">
+            <option value="games_desc">เล่นเยอะสุด (Games ⬇)</option>
+            <option value="games_asc">เล่นน้อยสุด (Games ⬆)</option>
+            <option value="wins_desc">ชนะเยอะสุด (Wins ⬇)</option>
+        </select>
+    </div>
+</div>
                 <div style="flex:1; max-height: 450px; overflow-y:auto; border-radius:8px;">
                     <table class="stats-table">
                         <thead>

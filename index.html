@@ -85,6 +85,9 @@
 </div>
                     <div class="control-panel">
                        <textarea id="new-players" placeholder="วางชื่อ... (1.แปง, 2.เวฟ)"></textarea>
+                        <button class="primary" style="width:100%; margin-top:5px; background:#8e44ad;" onclick="openDbSelector()">
+        📖 เลือกคนจาก Database
+    </button>
                         <div style="display:flex; gap:8px; margin-top:8px;">
                             <button class="success" style="flex:1;" onclick="addPlayers()">+ เพิ่ม</button>
                             <button class="secondary" onclick="openBookingModal('pair')">คู่</button>
@@ -228,5 +231,15 @@
 <script src="firebase-sync.js"></script>
 
 <script src="app.js"></script>
+    
+    <div id="dbModal" class="db-modal">
+        <div class="db-modal-content">
+            <h3 style="margin-top:0; color:#2c3e50;">📖 เลือกจาก Database</h3>
+            <input type="text" id="dbSearch" placeholder="🔍 ค้นหาชื่อ..." onkeyup="filterDbPlayers()" style="padding:10px; width:100%; box-sizing:border-box; border-radius:8px; border:1px solid #ccc;">
+            <div id="dbPlayerList" class="db-player-list">
+                </div>
+            <button class="secondary" style="margin-top:15px;" onclick="closeDbSelector()">↩ ย้อนกลับ / ปิด</button>
+        </div>
+    </div>
 </body>
 </html>

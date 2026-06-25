@@ -1265,4 +1265,16 @@ async function addSinglePlayerFromDb(name) {
     // อัปเดตหน้าต่างให้ปุ่มกลายเป็น "มีในคิวแล้ว" สดๆ ร้อนๆ
     renderDbPlayers(cloudPlayersCache);
 }
+// ==========================================
+// 🖼️ ระบบซูมดูรูปโปรไฟล์ใหญ่
+// ==========================================
+function showBigImage(url, name) {
+    document.getElementById('big-image-name').innerText = name;
+    document.getElementById('big-image-view').src = url;
+    document.getElementById('image-modal').style.display = 'flex';
+}
+
+function closeBigImage() {
+    document.getElementById('image-modal').style.display = 'none';
+}
 init();

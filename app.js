@@ -1157,5 +1157,93 @@ window.onload = function() {
     }
 }
 
+// ==========================================
+// 📖 ระบบจิ้มชื่อจาก Database ฝีมือเวฟ
+// ==========================================
+let cloudPlayersCache = [];
 
+function openDbSelector() {
+    document.getElementById('dbModal').style.display = 'flex';
+    document.getElementById('dbSearch').value = '';
+    const listDiv = document.getElementById('dbPlayerList');
+    listDiv.innerHTML = '<div style="padding:20px; text-align:center;">กำลังโหลดข้อมูล... ⏳</div>';
+
+    // วิ่งไปดูดข้อมูลจาก Firebase
+    if (typeof db === 'undefined') return;
+    db.collection('players_profile').get().then(snapshot => {
+        cloudPlayersCache = [];
+        snapshot.forEach(doc => cloudPlayersCache.push(doc.data()));
+        // เรียงตาม MMR มากไปน้อย
+        cloudPlayersCache.sort((a, b) => (b.mmr || 0) - (a.mmr || 0));
+        renderDbPlayers(cloudPlayersCache);
+    }).catch(err => {
+        listDiv.innerHTML = '<div style="color:red; text-align:center;">โหลดพลาดว่ะ! เช็คเน็ตดิ๊</div>';
+    });
+}
+
+function closeDbSelector() {
+    document.getElementById('dbModal').style.display = 'none';
+}
+
+function renderDbPlayers(playerList) {
+    const listDiv = document.getElementById('dbPlayerList');
+    listDiv.innerHTML = '';
+    
+    playerList.forEach(p => {
+        // เช็คว่าคนนี้อยู่ในคิววันนี้แล้วหรือยัง (เช็คจากตัวแปร players)
+        const isAlreadyInQueue = players.some(activeP => activeP.name === p.name);
+        
+        const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff`;
+        const avatar = p.avatarUrl || defaultAvatar;
+
+        listDiv.innerHTML += `
+            <div class="db-player-item" ${isAlreadyInQueue ? 'style="opacity:0.5; background:#eee;"' : ''}>
+                <div style="display:flex; align-items:center;">
+                    <img src="${avatar}" class="mini-avatar" style="width:35px; height:35px; margin-right:10px;">
+                    <div>
+                        <strong style="font-size:1.1em;">${p.name}</strong><br>
+                        <span style="font-size:0.8em; color:#7f8c8d;">MMR: ${p.mmr || 100}</span>
+                    </div>
+                </div>
+                ${isAlreadyInQueue 
+                    ? `<span style="font-size:0.8em; color:#c0392b; font-weight:bold;">มีในคิวแล้ว</span>` 
+                    : `<button class="db-add-btn" onclick="addSinglePlayerFromDb('${p.name}')">+ แอดลงคอร์ท</button>`
+                }
+            </div>
+        `;
+    });
+}
+
+function filterDbPlayers() {
+    const keyword = document.getElementById('dbSearch').value.toLowerCase();
+    const filtered = cloudPlayersCache.filter(p => p.name.toLowerCase().includes(keyword));
+    renderDbPlayers(filtered);
+}
+
+// ฟังก์ชันแอดคนลงคิวทีละคน (หลอกใช้ addPlayers เดิม)
+async function addSinglePlayerFromDb(name) {
+    if (players.some(p => p.name === name)) {
+        alert("มึงแอดคนนี้ไปแล้ว จะแอดซ้ำทำไม!"); return;
+    }
+    
+    // สร้าง textarea จำลองขึ้นมาหลอกฟังก์ชันเดิม
+    const tempBox = document.createElement('textarea');
+    tempBox.value = name;
+    
+    // สลับ id กับของจริงแป๊บนึง
+    const realBox = document.getElementById('new-players');
+    realBox.id = 'temp-hidden-box';
+    tempBox.id = 'new-players';
+    document.body.appendChild(tempBox);
+    
+    // เรียกฟังก์ชันเพิ่มคนเดิมของมึงให้มันไปดึงสถิติต่างๆ มา
+    await addPlayers(); 
+    
+    // สลับ id กลับให้เหมือนเดิม
+    tempBox.remove();
+    realBox.id = 'new-players';
+    
+    // อัปเดตหน้าต่างให้ปุ่มกลายเป็น "มีในคิวแล้ว" สดๆ ร้อนๆ
+    renderDbPlayers(cloudPlayersCache);
+}
 init();

@@ -235,6 +235,7 @@ async function addPlayers() {
                 if (doc.exists) {
                     const cloudData = doc.data();
                     profile.level = cloudData.level || 'BG';
+                    profile.avatarUrl = cloudData.avatarUrl || null;
                     profile.gender = cloudData.gender || 'M';
                     profile.gamesPlayed = cloudData.gamesPlayed || 0;
                     profile.wins = cloudData.wins || 0;
@@ -448,8 +449,13 @@ function renderPlayerOnCourt(player, courtIdx, slotIdx) {
 
     const rule = courts[courtIdx].rule || 'normal';
     let badge = (rule === 'winner_stay') ? `<span class="quota-badge" style="background:${pl.sessionGames >= 1 ? '#e67e22' : '#27ae60'}">G: ${pl.sessionGames + 1}/2</span>` : '';
-    
-    return `<div class="player-on-court" title="เปลี่ยนตัว" onclick="kickPlayer(${courtIdx}, ${slotIdx})"><strong>${pl.name}</strong><span style="font-size:0.8em; margin-top:2px;">(${pl.todayGames || 0}P)</span>${badge}</div>`;
+    const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(pl.name)}&background=random&color=fff`;
+    const avatarImg = pl.avatarUrl ? pl.avatarUrl : defaultAvatar;
+
+    return `<div class="player-on-court" title="เปลี่ยนตัว" onclick="kickPlayer(${courtIdx}, ${slotIdx})">
+        <img src="${avatarImg}" class="mini-avatar">
+        <strong>${pl.name}</strong><span style="font-size:0.8em; margin-top:2px;">(${pl.todayGames || 0}P)</span>${badge}
+    </div>`;
 }
 
 function renderCourtButtons(court, idx) {
@@ -952,8 +958,15 @@ function updateQueueDisplay() {
 
         const waitBadge = !p.isResting ? `<span class="wait-badge ${badgeClass}">${badgeText}</span>` : '<small style="color:gray;">(พัก)</small>';
 
-        return `<li class="${itemClass}" style="${opacityStyle}"><div class="player-info">${!p.isResting ? levelBadge + genderBadge : ''}<strong>${namePrefix}${p.name}</strong>${p.bookingId ? `<small onclick="cancelBooking('${p.bookingId}')" style="cursor:pointer;">🔒</small>` : ''}${waitBadge}</div><button class="mini-btn ${p.isResting ? 'success' : 'secondary'}" style="margin-right:5px;" onclick="toggleRest(${p.id})">${p.isResting ? 'ตื่น' : '💤'}</button><button class="mini-btn danger" onclick="removePlayer(${p.id})">×</button></li>`;
+        // 👇 โค้ดเสกรูปที่กูให้เพิ่ม เอามาแทรกเตรียมไว้ตรงนี้!
+        const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff`;
+        const avatarImg = p.avatarUrl ? p.avatarUrl : defaultAvatar;
+        const avatarHtml = `<img src="${avatarImg}" class="mini-avatar" style="margin-right: 5px;">`;
+
+        // 👇 แล้วเอา avatarHtml ไปยัดใส่ตรงหน้าชื่อ (หลัง genderBadge)
+        return `<li class="${itemClass}" style="${opacityStyle}"><div class="player-info">${!p.isResting ? levelBadge + genderBadge : ''}${avatarHtml}<strong>${namePrefix}${p.name}</strong>${p.bookingId ? `<small onclick="cancelBooking('${p.bookingId}')" style="cursor:pointer;">🔒</small>` : ''}${waitBadge}</div><button class="mini-btn ${p.isResting ? 'success' : 'secondary'}" style="margin-right:5px;" onclick="toggleRest(${p.id})">${p.isResting ? 'ตื่น' : '💤'}</button><button class="mini-btn danger" onclick="removePlayer(${p.id})">×</button></li>`;
     }).join('');
+    
     updateNextMatchPanel();
 }
 

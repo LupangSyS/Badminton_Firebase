@@ -23,6 +23,24 @@ function generateRoomCode() {
 
 // 👑 ฟังก์ชันสร้างห้อง (Host) - อัปเกรดแล้ว!
 // 👑 ฟังก์ชันสร้างห้อง (Host) - เพิ่มระบบจำรหัส
+function createRoom() {
+    currentRoomId = generateRoomCode();
+    isHost = true;
+    
+    sessionStorage.setItem('ROOM_ID', currentRoomId);
+    sessionStorage.setItem('IS_HOST', 'true');
+
+    document.getElementById('landing-page').style.display = 'none';
+    document.getElementById('app-container').style.display = 'block';
+    
+    document.getElementById('display-room-id').innerText = currentRoomId;
+    document.getElementById('display-role').innerText = "👑 HOST (คนคุม)";
+    document.getElementById('display-role').style.background = "#e74c3c";
+    
+    alert(`✅ สร้างห้องสำเร็จ! รหัสห้องของคุณคือ: ${currentRoomId}\nส่งรหัสนี้ให้เพื่อนเข้ามาดูคิวได้เลย`);
+    
+    if (typeof triggerSave === 'function') triggerSave(); 
+}
 
 
 // --- ฟังก์ชันเช็คว่าเปิดหน้าต่างค้างอยู่มั้ย (ที่มึงเผลอลบทิ้งไป) ---

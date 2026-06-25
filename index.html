@@ -242,5 +242,15 @@
             <button class="secondary" style="margin-top:15px;" onclick="closeDbSelector()">↩ ย้อนกลับ / ปิด</button>
         </div>
     </div>
+
+    <div id="image-modal" class="modal" style="z-index: 2000;" onclick="closeBigImage()">
+        <div class="modal-content" style="text-align: center; background: transparent; box-shadow: none; padding: 0;" onclick="event.stopPropagation()">
+            <div style="background: white; padding: 15px; border-radius: 16px; display: inline-block; max-width: 90vw;">
+                <h3 id="big-image-name" style="margin: 0 0 10px 0; color: #2c3e50;">ชื่อ</h3>
+                <img id="big-image-view" src="" style="max-width: 100%; max-height: 60vh; border-radius: 8px; object-fit: contain; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                <button class="secondary" style="margin-top: 15px; width: 100%;" onclick="closeBigImage()">❌ ปิดรูป</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

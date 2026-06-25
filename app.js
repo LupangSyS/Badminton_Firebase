@@ -979,7 +979,8 @@ function updateQueueDisplay() {
         // 👇 โค้ดเสกรูปที่กูให้เพิ่ม เอามาแทรกเตรียมไว้ตรงนี้!
         const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff`;
         const avatarImg = p.avatarUrl ? p.avatarUrl : defaultAvatar;
-        const avatarHtml = `<img src="${avatarImg}" class="mini-avatar" style="margin-right: 5px;">`;
+        // โค้ดใหม่:
+const avatarHtml = `<img src="${avatarImg}" class="mini-avatar" style="margin-right: 5px; cursor: zoom-in;" onclick="event.stopPropagation(); showBigImage('${avatarImg}', '${p.name}')">`;
 
         // 👇 แล้วเอา avatarHtml ไปยัดใส่ตรงหน้าชื่อ (หลัง genderBadge)
         return `<li class="${itemClass}" style="${opacityStyle}"><div class="player-info">${!p.isResting ? levelBadge + genderBadge : ''}${avatarHtml}<strong>${namePrefix}${p.name}</strong>${p.bookingId ? `<small onclick="cancelBooking('${p.bookingId}')" style="cursor:pointer;">🔒</small>` : ''}${waitBadge}</div><button class="mini-btn ${p.isResting ? 'success' : 'secondary'}" style="margin-right:5px;" onclick="toggleRest(${p.id})">${p.isResting ? 'ตื่น' : '💤'}</button><button class="mini-btn danger" onclick="removePlayer(${p.id})">×</button></li>`;

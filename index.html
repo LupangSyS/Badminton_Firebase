@@ -9,28 +9,43 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- 1. หน้า Lobby ต้องอยู่บนสุด และไม่มี display:none -->
-    <!-- 🚪 1. หน้า Lobby (อันนี้โชว์ตอนแรก) -->
-    <div id="landing-page" style="text-align: center; margin-top: 100px;">
+
+<!-- 🚪 หน้า Lobby (V.Wave - รวมฮับ) -->
+    <div id="landing-page" style="text-align: center; margin-top: 50px;">
         <h1 style="font-size: 2.5rem; color: #2c3e50;">🏸 Badminton Manager PRO</h1>
-        <p>ระบบจัดการคิวแบดมินตัน Realtime</p>
+        <p>ระบบจัดการคิวและสถิติแบบครบวงจร</p>
         
-        <div style="margin: 40px;">
-            <!-- มึงดูตรงนี้! ต้องเป็นปุ่มแบบนี้ ไม่ใช่พิมพ์แค่ตัวหนังสือ ...ปุ่มสร้างห้อง... -->
-            <button onclick="createRoom()" class="primary" style="font-size: 1.2rem; padding: 15px 30px; border-radius: 8px;">
-                👑 สร้างห้องใหม่ (Host)
+        <div style="margin: 30px auto; max-width: 400px; display: flex; flex-direction: column; gap: 15px;">
+            
+            <!-- โซนจัดการคอร์ท -->
+            <button onclick="createRoom()" class="primary" style="font-size: 1.2rem; padding: 15px; border-radius: 8px;">
+                👑 1. สร้างห้องใหม่ (Host)
             </button>
-        </div>
-        
-        <hr style="width: 50%; margin: 30px auto; border: 1px solid #ddd;">
-        
-        <div style="margin: 40px;">
-            <input type="text" id="room-code-input" placeholder="เช่น 0405-A1B2" maxlength="9" 
-                   style="font-size: 1.5rem; text-align: center; text-transform: uppercase; width: 250px; padding: 10px; border-radius: 8px;">
-            <br><br>
-            <button onclick="joinRoom()" class="secondary" style="font-size: 1.2rem; padding: 10px 30px; border-radius: 8px;">
-                📱 เข้าร่วมห้อง (ดูคิว)
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <input type="text" id="room-code-input" placeholder="รหัสห้อง เช่น 1908-A1B2" 
+                       style="flex: 1; text-align: center; font-size: 1.1rem; border-radius: 8px; border: 1px solid #ccc; text-transform: uppercase;">
+                <!-- ปุ่มเข้าโหมดแอดมิน (เอาไว้คุมคิวผ่านมือถือ) -->
+                <button onclick="joinRoomAdmin()" class="warning" style="padding: 10px 15px; border-radius: 8px; font-weight: bold;">
+                    🛠️ 2. เข้าห้อง (แอดมิน)
+                </button>
+                <!-- ปุ่มเข้าโหมดคนดู -->
+                <button onclick="joinRoom()" class="secondary" style="padding: 10px 15px; border-radius: 8px; font-weight: bold;">
+                    📱 3. เข้าห้อง (ดูคิว)
+                </button>
+            </div>
+
+            <hr style="width: 100%; border: 1px solid #ddd; margin: 15px 0;">
+
+            <!-- โซนสถิติหลังบ้าน -->
+            <button onclick="window.location.href='database.html'" class="success" style="font-size: 1.1rem; padding: 12px; border-radius: 8px; background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer;">
+                🌐 4. Hall of Fame (เพิ่ม/ลบคน)
             </button>
+            
+            <button onclick="window.location.href='history.html'" class="primary" style="font-size: 1.1rem; padding: 12px; border-radius: 8px; background: #8e44ad; color: white; border: none; font-weight: bold; cursor: pointer;">
+                📊 5. ประวัติ & คำนวณค่าใช้จ่าย
+            </button>
+            
         </div>
     </div>
 

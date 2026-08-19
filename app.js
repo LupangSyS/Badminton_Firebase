@@ -41,7 +41,54 @@ function createRoom() {
     
     if (typeof triggerSave === 'function') triggerSave(); 
 }
+// 📱 2. เข้าร่วมห้อง (โหมดคนดู - แตะอะไรไม่ได้)
+function joinRoom() {
+    const roomInput = document.getElementById('room-code-input').value.trim().toUpperCase();
+    if (!roomInput) { alert("ใส่รหัสห้องมาก่อนดิเว้ย!"); return; }
 
+    currentRoomId = roomInput;
+    isHost = false; // 🚫 ไม่ใช่แอดมิน
+
+    sessionStorage.setItem('ROOM_ID', currentRoomId);
+    sessionStorage.setItem('IS_HOST', 'false');
+
+    document.getElementById('landing-page').style.display = 'none';
+    document.getElementById('app-container').style.display = 'block';
+    
+    document.getElementById('display-room-id').innerText = currentRoomId;
+    document.getElementById('display-role').innerText = "📱 SPECTATOR (คนดู)";
+    document.getElementById('display-role').style.background = "#7f8c8d";
+
+    // 🔒 ซ่อนแผงควบคุม เพราะเป็นแค่คนดู
+    const controlPanel = document.querySelector('.control-sidebar-container');
+    if(controlPanel) controlPanel.style.display = 'none';
+    
+    alert(`เข้าดูห้อง ${currentRoomId} เรียบร้อย!`);
+}
+
+// 🛠️ 3. เข้าร่วมห้อง (โหมดแอดมิน - สวมรอยคุมคิว)
+function joinRoomAdmin() {
+    const roomInput = document.getElementById('room-code-input').value.trim().toUpperCase();
+    if (!roomInput) { alert("ใส่รหัสห้องมาก่อนดิเว้ย!"); return; }
+
+    currentRoomId = roomInput;
+    isHost = true; // 👑 เป็นแอดมิน
+
+    sessionStorage.setItem('ROOM_ID', currentRoomId);
+    sessionStorage.setItem('IS_HOST', 'true');
+
+    document.getElementById('landing-page').style.display = 'none';
+    document.getElementById('app-container').style.display = 'block';
+    
+    document.getElementById('display-room-id').innerText = currentRoomId;
+    document.getElementById('display-role').innerText = "🛠️ ADMIN (คนคุมคิว)";
+    document.getElementById('display-role').style.background = "#d35400";
+    
+    // 🔓 โชว์แผงควบคุม เพราะสวมรอยแอดมิน
+    const controlPanel = document.querySelector('.control-sidebar-container');
+    if(controlPanel) controlPanel.style.display = 'block';
+    
+    alert(`✅ เข้าห้อง ${currentRoomId} ในฐานะแอดมินเรียบร้อย!`);
 
 // --- ฟังก์ชันเช็คว่าเปิดหน้าต่างค้างอยู่มั้ย (ที่มึงเผลอลบทิ้งไป) ---
 function isModalOpen() {

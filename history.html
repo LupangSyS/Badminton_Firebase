@@ -168,7 +168,7 @@
             html += `</select></div><div id="daily-match-list"></div>`;
             
             container.innerHTML = html;
-            renderSpecificDate(dates); // วาดวันล่าสุดก่อนเลย
+            renderSpecificDate(dates[0]); // วาดวันล่าสุดก่อนเลย
         }
 
         function renderSpecificDate(selectedDate) {
@@ -324,6 +324,40 @@
 
         // เริ่มต้นรันสคริปต์
         fetchData();
+
+        // ==========================================
+// 💰 ฟังก์ชันเซฟบิลสรุปยอดลง Firebase (V. Final + ขุนทอง)
+// ==========================================
+async function saveBillToFirebase(roomId, billData) {
+    // roomId คือรหัสห้อง (เช่น "1908-A1B2")
+    // billData คือ Object ก้อนข้อมูลบิลที่คำนวณเสร็จแล้ว
+    
+    if (!roomId || !billData) {
+        console.error("ข้อมูลไม่ครบว่ะ เซฟไม่ได้!");
+        alert("⚠️ ข้อมูลหายไปไหนไม่รู้ เช็คระบบก่อนเซฟดิ๊!");
+        return;
+    }
+
+    try {
+        // วิ่งไปคอลเลกชันใหม่ที่ชื่อ bills แล้วสร้าง Document ชื่อเดียวกับ roomId
+        await db.collection('bills').doc(roomId).set({
+            courtFee: billData.courtFee,             // ค่าสนามรวม
+            shuttlePrice: billData.shuttlePrice,     // ราคาลูกต่อหลอด
+            shuttleUsed: billData.shuttleUsed,       // จำนวนลูกที่ใช้
+            totalCost: billData.totalCost,           // ยอดรวมทั้งหมด
+            khunthongTotal: billData.khunthongTotal, // ✨ ยอดสุทธิที่ต้องไปตั้งบิลในขุนทอง
+            directTotal: billData.directTotal,       // ✨ ยอดโอนตรง/เงินสด
+            playersBill: billData.playersBill,       // 👥 Array รายชื่อ + โควต้าเวลา + วิธีจ่าย
+            savedAt: Date.now()                      // ประทับเวลาไว้ด้วย
+        }); 
+        
+        alert("💾 บันทึกบิลลง Database โคตรสมบูรณ์! ก๊อปยอดไปตั้งในขุนทองได้เลย!");
+        
+    } catch (error) {
+        console.error("❌ เซฟบิลพลาด: ", error);
+        alert("เซฟไม่ติด");
+    }
+}
     </script>
 </body>
 </html>

@@ -6,23 +6,19 @@
 // --- Persistence & State Management ---
 const STORAGE_KEY = 'BADMINTON_MANAGER_V7_DATA';
 
-// --- ระบบจัดการห้อง (Room System) ---
-let currentRoomId = null;
-let isHost = false;
 
-// 🎲 ฟังก์ชันสุ่มรหัสห้อง (เช่น 0405-A1B2)
+// ==========================================
+// 🚪 ระบบ Lobby (V. ต่อท่อติดเครื่องยนต์สมบูรณ์)
+// ==========================================
+
 function generateRoomCode() {
-    const today = new Date();
-    const d = String(today.getDate()).padStart(2, '0');
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-    return `${d}${m}-${code}`; 
+    const d = new Date();
+    const datePart = String(d.getDate()).padStart(2, '0') + String(d.getMonth() + 1).padStart(2, '0');
+    const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `${datePart}-${randomPart}`;
 }
 
-// 👑 ฟังก์ชันสร้างห้อง (Host) - อัปเกรดแล้ว!
-// 👑 ฟังก์ชันสร้างห้อง (Host) - เพิ่มระบบจำรหัส
+// 👑 1. สร้างห้องใหม่ (Host)
 function createRoom() {
     currentRoomId = generateRoomCode();
     isHost = true;
@@ -30,24 +26,41 @@ function createRoom() {
     sessionStorage.setItem('ROOM_ID', currentRoomId);
     sessionStorage.setItem('IS_HOST', 'true');
 
-    document.getElementById('landing-page').style.display = 'none';
-    document.getElementById('app-container').style.display = 'block';
+    // สลับหน้าจอ Lobby ออก แล้วเปิดหน้าแอป
+    const landing = document.getElementById('landing-page');
+    const app = document.getElementById('app-container');
+    if (landing) landing.style.display = 'none';
+    if (app) app.style.display = 'block';
     
-    document.getElementById('display-room-id').innerText = currentRoomId;
-    document.getElementById('display-role').innerText = "👑 HOST (คนคุม)";
-    document.getElementById('display-role').style.background = "#e74c3c";
+    // อัปเดตหัวป้าย
+    const roomDisp = document.getElementById('display-room-id');
+    const roleDisp = document.getElementById('display-role');
+    if (roomDisp) roomDisp.innerText = currentRoomId;
+    if (roleDisp) {
+        roleDisp.innerText = "👑 HOST (คนคุม)";
+        roleDisp.style.background = "#e74c3c";
+    }
+
+    // 🚀 จุดสำคัญ: สั่งติดเครื่องยนต์ระบบสนามทันที!
+    if (typeof init === 'function') init();
+    if (typeof renderCourts === 'function') renderCourts();
+    if (typeof updateQueueDisplay === 'function') updateQueueDisplay();
+    if (typeof updateDashboard === 'function') updateDashboard();
     
-    alert(`✅ สร้างห้องสำเร็จ! รหัสห้องของคุณคือ: ${currentRoomId}\nส่งรหัสนี้ให้เพื่อนเข้ามาดูคิวได้เลย`);
-    
-    if (typeof triggerSave === 'function') triggerSave(); 
+    // เริ่มซิงค์ Firebase (ถ้ามีฟังก์ชันซิงค์แบบเรียลไทม์)
+    if (typeof startRealtimeSync === 'function') startRealtimeSync();
+
+    alert(`✅ สร้างห้องสำเร็จ! รหัสห้องคือ: ${currentRoomId}`);
 }
-// 📱 2. เข้าร่วมห้อง (โหมดคนดู - แตะอะไรไม่ได้)
+
+// 📱 2. เข้าดูคิว (คนดู)
 function joinRoom() {
-    const roomInput = document.getElementById('room-code-input').value.trim().toUpperCase();
+    const input = document.getElementById('room-code-input');
+    const roomInput = input ? input.value.trim().toUpperCase() : '';
     if (!roomInput) { alert("ใส่รหัสห้องมาก่อนดิเว้ย!"); return; }
 
     currentRoomId = roomInput;
-    isHost = false; // 🚫 ไม่ใช่แอดมิน
+    isHost = false;
 
     sessionStorage.setItem('ROOM_ID', currentRoomId);
     sessionStorage.setItem('IS_HOST', 'false');
@@ -59,20 +72,22 @@ function joinRoom() {
     document.getElementById('display-role').innerText = "📱 SPECTATOR (คนดู)";
     document.getElementById('display-role').style.background = "#7f8c8d";
 
-    // 🔒 ซ่อนแผงควบคุม เพราะเป็นแค่คนดู
+    // ซ่อนแผงควบคุม
     const controlPanel = document.querySelector('.control-sidebar-container');
-    if(controlPanel) controlPanel.style.display = 'none';
-    
-    alert(`เข้าดูห้อง ${currentRoomId} เรียบร้อย!`);
+    if (controlPanel) controlPanel.style.display = 'none';
+
+    if (typeof startRealtimeSync === 'function') startRealtimeSync();
+    if (typeof renderCourts === 'function') renderCourts();
 }
 
-// 🛠️ 3. เข้าร่วมห้อง (โหมดแอดมิน - สวมรอยคุมคิว)
+// 🛠️ 3. เข้าห้องแอดมิน (คุมคิวผ่านมือถือ)
 function joinRoomAdmin() {
-    const roomInput = document.getElementById('room-code-input').value.trim().toUpperCase();
+    const input = document.getElementById('room-code-input');
+    const roomInput = input ? input.value.trim().toUpperCase() : '';
     if (!roomInput) { alert("ใส่รหัสห้องมาก่อนดิเว้ย!"); return; }
 
     currentRoomId = roomInput;
-    isHost = true; // 👑 เป็นแอดมิน
+    isHost = true;
 
     sessionStorage.setItem('ROOM_ID', currentRoomId);
     sessionStorage.setItem('IS_HOST', 'true');
@@ -83,12 +98,15 @@ function joinRoomAdmin() {
     document.getElementById('display-room-id').innerText = currentRoomId;
     document.getElementById('display-role').innerText = "🛠️ ADMIN (คนคุมคิว)";
     document.getElementById('display-role').style.background = "#d35400";
-    
-    // 🔓 โชว์แผงควบคุม เพราะสวมรอยแอดมิน
+
     const controlPanel = document.querySelector('.control-sidebar-container');
-    if(controlPanel) controlPanel.style.display = 'block';
-    
-    alert(`✅ เข้าห้อง ${currentRoomId} ในฐานะแอดมินเรียบร้อย!`);
+    if (controlPanel) controlPanel.style.display = 'block';
+
+    if (typeof startRealtimeSync === 'function') startRealtimeSync();
+    if (typeof renderCourts === 'function') renderCourts();
+    if (typeof updateQueueDisplay === 'function') updateQueueDisplay();
+}
+
 
 // --- ฟังก์ชันเช็คว่าเปิดหน้าต่างค้างอยู่มั้ย (ที่มึงเผลอลบทิ้งไป) ---
 function isModalOpen() {

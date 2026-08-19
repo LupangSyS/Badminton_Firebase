@@ -903,7 +903,7 @@ function updateCost() {
     renderOverview(true);
 }
 
-function endSession() {
+async function endSession() {
   
 
     // แคปรูปตามเดิม
@@ -914,6 +914,11 @@ function endSession() {
         link.href = canvas.toDataURL();
         link.click();
     });
+    sessionStorage.removeItem('ROOM_ID');
+    sessionStorage.removeItem('IS_HOST');
+    localStorage.removeItem('BADMINTON_HISTORY_CACHE');
+    alert("✅ จบการตีแบดวันนี้! ปิดระบบที่เครื่องนี้เรียบร้อย");
+    window.location.reload();
 }
 
 let currentBookingType = '';
